@@ -3,3 +3,4 @@ tmp*
 test*
 .idea
 config.go
+music/config.go
