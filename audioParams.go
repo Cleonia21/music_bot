@@ -14,10 +14,11 @@ import (
 )
 
 type Audio struct {
-	yandex music.Music
+	telegram *telego.Bot
+	yandex   music.Music
 }
 
-func CreateAudio() *Audio {
+func CreateAudio(telegram *telego.Bot) *Audio {
 	a := Audio{
 		yandex: music.Music{},
 	}
@@ -143,4 +144,18 @@ func (a *Audio) GetParams(update *telego.Update) (*telego.SendAudioParams, error
 	audio.WithThumbnail(&pictureInputFile)
 
 	return audio, nil
+}
+
+func (a *Audio) handlingAudioRequest(update *telego.Update) {
+	audio, err := a.GetParams(update)
+	if err != nil {
+		a.telegram.Logger().Debugf(err.Error())
+		return
+	}
+
+	_, err = a.telegram.SendAudio(audio)
+	if err != nil {
+		a.telegram.Logger().Debugf(err.Error())
+		return
+	}
 }

@@ -1,36 +1,36 @@
 package main
 
 import (
-	"container/list"
 	"github.com/mymmrac/telego"
 )
 
-type User struct {
-	ChatID     telego.ChatID
-	ID         int64
-	Room       *Room
-	isRoomRoot bool
-	Nik        string
-	Messages   *list.List //[]*telego.SendAudioParams
+const ()
 
+type User struct {
+	ChatID      telego.ChatID
+	ID          int64
+	Room        *Room
+	isRoomRoot  bool
+	Nik         string
+	MessHistory map[int]string
+	State       int
 }
 
 func CreateUser(ChatID telego.ChatID, ID int64, nik string) *User {
 	u := User{
-		ChatID: ChatID,
-		ID:     ID,
-		Nik:    nik,
+		ChatID:      ChatID,
+		ID:          ID,
+		Nik:         nik,
+		MessHistory: make(map[int]string),
 	}
-	u.Messages = list.New()
 	return &u
 }
 
-func (u *User) addMessage(params *telego.SendAudioParams) {
-	u.Messages.PushBack(params)
+func (u *User) addAudio(params *telego.SendAudioParams) {
+	u.Room.AddAudio(u, params)
 }
 
-func (u *User) connectToRoom(room *Room, isRoot bool) {
+func (u *User) joinRoom(room *Room, isRoot bool) {
 	u.Room = room
 	u.isRoomRoot = isRoot
 }
-
