@@ -1,10 +1,8 @@
-package main
+package users
 
 import (
 	"github.com/mymmrac/telego"
 )
-
-const ()
 
 type User struct {
 	ChatID      telego.ChatID
@@ -16,7 +14,7 @@ type User struct {
 	State       int
 }
 
-func CreateUser(ChatID telego.ChatID, ID int64, nik string) *User {
+func Constructor(ChatID telego.ChatID, ID int64, nik string) *User {
 	u := User{
 		ChatID:      ChatID,
 		ID:          ID,
@@ -26,11 +24,15 @@ func CreateUser(ChatID telego.ChatID, ID int64, nik string) *User {
 	return &u
 }
 
-func (u *User) addAudio(params *telego.SendAudioParams) {
+func (u *User) AddAudio(params *telego.SendAudioParams) {
 	u.Room.AddAudio(u, params)
 }
 
-func (u *User) joinRoom(room *Room, isRoot bool) {
+func (u *User) JoinRoom(room *Room, isRoot bool) {
 	u.Room = room
 	u.isRoomRoot = isRoot
+}
+
+func Destructor(user *User) {
+
 }
