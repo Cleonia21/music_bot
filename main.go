@@ -10,92 +10,59 @@ import (
 	"os"
 )
 
-//const (
-//	stateStart  = 0
-//	stateNoRoom = 1
-//
-//	stateCreateRoom = 2
-//	stateJoinRoom   = 3
-//
-//	stateRoomRoot  = 4
-//	stateRoomGuest = 5
-//)
-
 type Bot struct {
-	telegram *telego.Bot
-	audio    *Audio
-	users    map[int64]*users.User
-	rooms    map[string]*users.Room
-	menu     *menu.Menu
-}
-
-func (b *Bot) joinRoom(user *users.User, title, pass string) error {
-	if user.Room != nil {
-		// correctly out from room
-		user.Room.Dell(b.users[user.ID])
-	}
-	Room, ok := b.rooms[title]
-	if ok {
-		return Room.Join(b.users[user.ID], pass)
-	}
-	return errors.New("incorrect title")
-}
-
-func (b *Bot) createRoom(user *users.User, title, pass string) {
-	var room users.Room
-	room.CreateRoom(
-		user,
-		title,
-		pass,
-	)
-	b.rooms[title] = &room
+	telegram  *telego.Bot
+	audio     *Audio
+	users     map[int64]*users.User
+	roomsRoot map[string]*users.User
+	menu      *menu.Menu
 }
 
 func (b *Bot) newUser(update *telego.Update) *users.User {
-	userID := update.Message.From.ID
-	user, ok := b.users[userID]
-	if ok {
-		return user
+	user := b.users[update.Message.From.ID]
+	if user == nil {
+		user = &users.User{}
+		user.Constructor(
+			tu.ID(update.Message.Chat.ID),
+			update.Message.From.ID,
+			update.Message.From.Username,
+		)
 	}
-	// check for duplicates
-	user = users.Constructor(
-		tu.ID(update.Message.Chat.ID),
-		update.Message.From.ID,
-		update.Message.From.Username,
-	)
 	b.users[user.ID] = user
 	return user
 }
 
-/*
-func (b *Bot) stateJoinRoom(user *users.User, update *telego.Update) string {
-	title, ok := user.MessHistory[0]
-	if !ok {
-		user.MessHistory[0] = update.Message.Text
-		return menu.JoinRoomPass()
-	}
-	// clear user message history
+func (b *Bot) stateJoinRoomWaitPass(user *users.User, update *telego.Update) error {
+	title := user.MessHistory[0]
 	pass := update.Message.Text
-	err := b.joinRoom(user, title, pass)
-	if err != nil {
-		user.State = stateNoRoom
-		return menu.RoomNotCreated() + "\n" + menu.RoomAction()
-	}
-	user.State = stateRoomGuest
-	return menu.JoinRoomComp()
-}
-*/
 
-func (b *Bot) stateCreateRoomWaitTitle(user *users.User, update *telego.Update) {
+	roomRoot := b.roomsRoot[title]
+	if roomRoot == nil {
+		return errors.New("title not found")
+	}
+	err := roomRoot.AddInRoom(user, pass)
+	if err == nil {
+		user.State = menu.StateRoomGuest
+	}
+	return err
+}
+
+func (b *Bot) stateJoinRoomWaitTitle(user *users.User, update *telego.Update) {
 	user.MessHistory[0] = update.Message.Text
-	user.State = menu.StateCreateRoomWaitPass
+	user.State = menu.StateJoinRoomWaitPass
 }
 
 func (b *Bot) stateCreateRoomWaitPass(user *users.User, update *telego.Update) {
 	title := user.MessHistory[0]
 	pass := update.Message.Text
-	b.createRoom(user, title, pass)
+	user.CreateRoom(title, pass)
+	b.roomsRoot[title] = user
 	user.State = menu.StateRoomRoot
+}
+
+func (b *Bot) stateCreateRoomWaitTitle(user *users.User, update *telego.Update) {
+	user.MessHistory[0] = update.Message.Text
+	user.State = menu.StateCreateRoomWaitPass
 }
 
 func (b *Bot) stateNoRoom(user *users.User, update *telego.Update) {
@@ -103,7 +70,7 @@ func (b *Bot) stateNoRoom(user *users.User, update *telego.Update) {
 	case "1":
 		user.State = menu.StateCreateRoomWaitTitle
 	case "2":
-		user.State = menu.StateJoinRoomTitle
+		user.State = menu.StateJoinRoomWaitTitle
 	default:
 		b.menu.SetPrefix(menu.PrefixNoSuchAnswer)
 	}
@@ -128,9 +95,11 @@ func (b *Bot) handlingUpdate(update *telego.Update) {
 		b.stateCreateRoomWaitTitle(user, update)
 	case menu.StateCreateRoomWaitPass:
 		b.stateCreateRoomWaitPass(user, update)
+	case menu.StateJoinRoomWaitTitle:
+		b.stateJoinRoomWaitTitle(user, update)
+	case menu.StateJoinRoomWaitPass:
+		b.stateJoinRoomWaitPass()
 
-		//case menu.StateJoinRoom:
-		//	b.stateJoinRoom(user, update)
 	}
 	_, _ = b.telegram.SendMessage(b.menu.Get(user))
 }
@@ -140,7 +109,7 @@ func main() {
 
 	bot := Bot{}
 	bot.users = make(map[int64]*users.User)
-	bot.rooms = make(map[string]*users.Room)
+	bot.roomsRoot = make(map[string]*users.User)
 
 	bot.menu = &menu.Menu{}
 	bot.menu.Init()

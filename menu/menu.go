@@ -48,13 +48,11 @@ const (
 	StateCreateRoomWaitTitle = 20
 	StateCreateRoomWaitPass  = 21
 
-	StateJoinRoomTitle = 30
-	StateJoinRoomPass  = 31
+	StateJoinRoomWaitTitle = 30
+	StateJoinRoomWaitPass  = 31
 
 	StateRoomRoot  = 4
 	StateRoomGuest = 5
-
-	StateIncorrectAnswer = 100
 )
 
 type Menu struct {
