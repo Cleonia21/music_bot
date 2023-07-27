@@ -25,11 +25,11 @@ func (m *Music) Authorization() {
 		// if you want http client with circuit breaker
 		yamusic.HTTPClient(circuitClient),
 		// provide user_id and access_token (needed by some methods)
-		yamusic.AccessToken(352880607, YA_MUSIC_TOKEN),
+		yamusic.AccessToken(352880607, "y0_AgAAAAAVCIffAAG8XgAAAADZ9NQjGLw1kvrFRHiWHhRVb3UKD1ShpsA"),
 	)
 }
 
-func (m *Music) SearchTrack(id int) {
+func (m *Music) searchTrack(id int) {
 	tracks, _, err := m.client.Tracks().Get(context.Background(), id)
 	if err != nil {
 		return

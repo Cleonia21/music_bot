@@ -1,7 +1,7 @@
-package main
+package audio
 
 import (
-	"MusicBot/music"
+	"MusicBot/audio/music"
 	"errors"
 	"github.com/bogem/id3v2"
 	"github.com/mymmrac/telego"
@@ -11,14 +11,17 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 )
 
+const pwd = "" //"audio/"
+
 type Audio struct {
-	telegram *telego.Bot
-	yandex   music.Music
+	mutex  sync.Mutex
+	yandex music.Music
 }
 
-func CreateAudio(telegram *telego.Bot) *Audio {
+func Init() *Audio {
 	a := Audio{
 		yandex: music.Music{},
 	}
@@ -79,7 +82,7 @@ func (a *Audio) resizePicture(fileName string) error {
 
 	imgJpg = resize.Resize(320, 320, imgJpg, resize.Bicubic)
 
-	imgOut, err := os.Create("newTestPicture.jpeg")
+	imgOut, err := os.Create(pwd + "newTestPicture.jpeg")
 	if err != nil {
 		return err
 	}
@@ -89,15 +92,15 @@ func (a *Audio) resizePicture(fileName string) error {
 }
 
 func (a *Audio) getAudioFile(URL string) (*os.File, error) {
-	err := a.downloadFile(URL, "tmpAudio.mp3")
+	err := a.downloadFile(URL, pwd+"tmpAudio.mp3")
 	if err != nil {
 		return nil, err
 	}
-	err = a.deleteFileTags("tmpAudio.mp3")
+	err = a.deleteFileTags(pwd + "tmpAudio.mp3")
 	if err != nil {
 		return nil, err
 	}
-	file, err := os.Open("tmpAudio.mp3")
+	file, err := os.Open(pwd + "tmpAudio.mp3")
 	if err != nil {
 		return nil, err
 	}
@@ -105,15 +108,15 @@ func (a *Audio) getAudioFile(URL string) (*os.File, error) {
 }
 
 func (a *Audio) getPictureFile(URL string) (*os.File, error) {
-	err := a.downloadFile(URL, "tmpPicture.jpeg")
+	err := a.downloadFile(URL, pwd+"tmpPicture.jpeg")
 	if err != nil {
 		return nil, err
 	}
-	err = a.resizePicture("tmpPicture.jpeg")
+	err = a.resizePicture(pwd + "tmpPicture.jpeg")
 	if err != nil {
 		return nil, err
 	}
-	picture, err := os.Open("tmpPicture.jpeg")
+	picture, err := os.Open(pwd + "tmpPicture.jpeg")
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +132,7 @@ func (a *Audio) GetParams(update *telego.Update) (*telego.SendAudioParams, error
 		return nil, err
 	}
 
+	a.mutex.Lock()
 	audioFile, err := a.getAudioFile(params.URL)
 	if err != nil {
 		return nil, err
@@ -142,10 +146,12 @@ func (a *Audio) GetParams(update *telego.Update) (*telego.SendAudioParams, error
 	audio := tu.Audio(chatID, tu.File(audioFile)).WithTitle(params.Title).WithPerformer(params.Performer)
 	pictureInputFile := tu.File(pictureFile)
 	audio.WithThumbnail(&pictureInputFile)
+	a.mutex.Unlock()
 
 	return audio, nil
 }
 
+/*
 func (a *Audio) handlingAudioRequest(update *telego.Update) {
 	audio, err := a.GetParams(update)
 	if err != nil {
@@ -159,3 +165,4 @@ func (a *Audio) handlingAudioRequest(update *telego.Update) {
 		return
 	}
 }
+*/
