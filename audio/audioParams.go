@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-const pwd = "" //"audio/"
+const pwd = "audio/"
 
 type Audio struct {
 	mutex  sync.Mutex

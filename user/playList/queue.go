@@ -30,11 +30,10 @@ func (q *queue) set(audio *telego.SendAudioParams) error {
 }
 
 func (q *queue) get() (audio *telego.SendAudioParams, err error) {
-	audio = <-q.queue
-	if audio == nil {
-		err = errors.New("пользователь не добавлял треков")
-	} else {
-		q.len--
+	if q.len == 0 {
+		return nil, errors.New("пользователь не добавлял треков")
 	}
+	audio = <-q.queue
+	q.len--
 	return
 }

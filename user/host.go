@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
+	"github.com/withmandala/go-log"
 )
 
 type hostUser struct {
@@ -14,14 +15,15 @@ type hostUser struct {
 	playList      playList.PlayList
 }
 
-func (h *hostUser) init(tg *telego.Bot, chatID telego.ChatID) {
-	h.tg = tg
-	h.id = chatID
+func (h *hostUser) init(tg *telego.Bot, logger *log.Logger, chatID telego.ChatID) {
+	h.fatherInit(tg, logger, chatID)
+
 	h.pass = "test pass"
 	h.connectedUser = make(map[*sendingUser]struct{})
 	h.playList.Init()
-	h.sendText(fmt.Sprintf("Имя: @%v\nПароль: %v", h.id.Username, h.pass))
-	h.sendMessage(telegoutil.Message(h.id, "Ждем пока кто-нибудь присоеденится..."))
+	text := "Отправь секретное сообщение тем кто хочет присоедениться⤵️"
+	h.sendMessage(telegoutil.Message(h.id, text))
+	h.sendText(fmt.Sprintf("`secretMessage/@%v/%v`", h.id.Username, h.pass))
 }
 
 func (h *hostUser) handler(update *telego.Update) (user users, needInit bool) {
@@ -29,16 +31,15 @@ func (h *hostUser) handler(update *telego.Update) (user users, needInit bool) {
 		switch update.Message.Text {
 		case "/menu":
 			h.sendMenu()
-		case "/start":
+		case "/start": //сообщить полям
 			return &unregUser{}, true
 		}
 	}
 	if update.CallbackQuery != nil {
-		_ = h.tg.AnswerCallbackQuery(
-			&telego.AnswerCallbackQueryParams{CallbackQueryID: update.CallbackQuery.ID})
-
 		if update.CallbackQuery.Data == "getTracks" {
-			h.sendAudio()
+			h.sendAudioPack()
+			_ = h.tg.AnswerCallbackQuery(
+				&telego.AnswerCallbackQueryParams{CallbackQueryID: update.CallbackQuery.ID})
 		}
 	}
 	return h, false
@@ -48,7 +49,7 @@ func (h *hostUser) sendMenu() {
 	text := "Количество треков у пользователей:\n\n"
 	summary := h.playList.GetSummary()
 	for _, s := range summary {
-		text += fmt.Sprintf("%v(%v)\n", s.ID.Username, s.Num)
+		text += fmt.Sprintf("%v\\(%v\\)\n", s.ID.Username, s.Num)
 	}
 	keyboard := telegoutil.InlineKeyboard(
 		telegoutil.InlineKeyboardRow(
@@ -58,22 +59,15 @@ func (h *hostUser) sendMenu() {
 	h.sendMessage(telegoutil.Message(h.id, text).WithReplyMarkup(keyboard))
 }
 
-func (h *hostUser) sendAudio() {
-	audios, errs := h.playList.GetAudio()
-	text := ""
-	if len(errs) != 0 {
-		text += "пользователи не добавили треки:\n"
-	}
-	for _, err := range errs {
-		text += err + " "
-	}
-	h.sendText(text)
+func (h *hostUser) sendAudioPack() (sentMsgs []*telego.Message) {
+	audios, _ := h.playList.GetAudio()
 	for _, audio := range audios {
-		_, err := h.tg.SendAudio(audio)
-		if err != nil {
-			h.tg.Logger().Errorf(err.Error())
+		msg := h.sendAudio(audio)
+		if msg != nil {
+			sentMsgs = append(sentMsgs, msg)
 		}
 	}
+	return sentMsgs
 }
 
 func (h *hostUser) validatePass(pass string) (ok bool) {
@@ -84,22 +78,24 @@ func (h *hostUser) validatePass(pass string) (ok bool) {
 	}
 }
 
-func (h *hostUser) join(user *sendingUser) {
+func (h *hostUser) join(user *sendingUser) (sentMsg *telego.Message) {
 	h.connectedUser[user] = struct{}{}
-	h.sendText("Присоединился @" + user.id.Username)
+	sentMsg = h.sendText("Присоединился @" + user.id.Username)
+	return
 }
 
-func (h *hostUser) disconnectUser(user *sendingUser) {
+func (h *hostUser) disconnectUser(user *sendingUser) (sentMsg *telego.Message) {
 	delete(h.connectedUser, user)
-	h.sendText("Пользователь @" + user.id.Username + " отключился")
+	sentMsg = h.sendText("Пользователь @" + user.id.Username + " отключился")
+	return
 }
 
-func (h *hostUser) setAudio(from *sendingUser, audio *telego.SendAudioParams) error {
+func (h *hostUser) setAudio(from *sendingUser, audio *telego.SendAudioParams) (sentMsg *telego.Message, err error) {
 	audio.ChatID = h.id
-	err := h.playList.SetAudio(from.id, audio)
+	err = h.playList.SetAudio(from.id, audio)
 	if err != nil {
-		return err
+		return
 	}
-	h.sendText("@" + from.id.Username + " добавил в очередь трек " + audio.Title)
-	return nil
+	sentMsg = h.sendText("@" + from.id.Username + " добавил в очередь трек " + audio.Title)
+	return
 }

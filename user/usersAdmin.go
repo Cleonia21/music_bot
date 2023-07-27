@@ -2,7 +2,11 @@ package user
 
 import (
 	"MusicBot/audio"
+	"MusicBot/user/utils"
 	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/withmandala/go-log"
+	"os"
 )
 
 type users interface {
@@ -11,21 +15,29 @@ type users interface {
 }
 
 type Admin struct {
-	tg    *telego.Bot
-	users map[int64]users
-	audio *audio.Audio
+	tg     *telego.Bot
+	users  map[int64]users
+	audio  *audio.Audio
+	logger *log.Logger
 }
 
 func Init(tg *telego.Bot) *Admin {
+	l := log.New(os.Stderr)
+	l.WithColor()
+	l.WithDebug()
+
 	a := Admin{
-		tg:    tg,
-		users: make(map[int64]users),
-		audio: audio.Init(),
+		tg:     tg,
+		users:  make(map[int64]users),
+		audio:  audio.Init(),
+		logger: l,
 	}
 	return &a
 }
 
 func (a *Admin) Handler(update *telego.Update) {
+	a.logger.Debugf("get update: " + utils.UpdateToStr(update))
+
 	var from int64
 	if update.Message != nil {
 		from = update.Message.From.ID
@@ -37,6 +49,7 @@ func (a *Admin) Handler(update *telego.Update) {
 		user := &unregUser{}
 		user.Init(
 			a.tg,
+			a.logger,
 			telego.ChatID{
 				ID:       update.Message.Chat.ID,
 				Username: update.Message.From.Username,
@@ -52,6 +65,8 @@ func (a *Admin) Handler(update *telego.Update) {
 			}
 		} else {
 			a.tg.Logger().Errorf("user not found")
+			text := "Неизвестная ошибка на стороне сервера,\nпопробуй нажать /start"
+			_, _ = a.tg.SendMessage(telegoutil.Message(telegoutil.ID(from), text))
 		}
 	}
 }
@@ -64,12 +79,22 @@ func (a *Admin) init(from, to users) users {
 
 	if unreg, ok = from.(*unregUser); ok {
 		if host, ok = to.(*hostUser); ok {
-			host.init(unreg.tg, unreg.id)
+			host.init(
+				a.tg,
+				a.logger,
+				unreg.id,
+			)
 			return host
 		} else if sending, ok = to.(*sendingUser); ok {
 			host, ok = a.searchUser(telego.ChatID{Username: unreg.url}).(*hostUser)
 			if ok && host.validatePass(unreg.pass) {
-				sending.init(unreg.tg, unreg.id, host, a.audio)
+				sending.init(
+					a.tg,
+					a.logger,
+					unreg.id,
+					host,
+					a.audio,
+				)
 				host.join(sending)
 				return sending
 			} else {
@@ -81,11 +106,13 @@ func (a *Admin) init(from, to users) users {
 		if host, ok = from.(*hostUser); ok {
 			unreg.Init(
 				a.tg,
+				a.logger,
 				host.id,
 			)
 		} else if sending, ok = from.(*sendingUser); ok {
 			unreg.Init(
 				a.tg,
+				a.logger,
 				sending.id,
 			)
 		}
