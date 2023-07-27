@@ -4,7 +4,6 @@ import (
 	"MusicBot/audio"
 	"MusicBot/user/utils"
 	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegoutil"
 	"github.com/withmandala/go-log"
 	"os"
 )
@@ -45,7 +44,8 @@ func (a *Admin) Handler(update *telego.Update) {
 		from = update.CallbackQuery.From.ID
 	}
 
-	if update.Message != nil && update.Message.Text == "/start" {
+	user, ok := a.users[from]
+	if !ok {
 		user := &unregUser{}
 		user.Init(
 			a.tg,
@@ -57,16 +57,9 @@ func (a *Admin) Handler(update *telego.Update) {
 		)
 		a.users[from] = users(user)
 	} else {
-		user, ok := a.users[from]
-		if ok {
-			newUser, needInit := user.handler(update)
-			if needInit {
-				a.users[from] = a.init(user, newUser)
-			}
-		} else {
-			a.tg.Logger().Errorf("user not found")
-			text := "Неизвестная ошибка на стороне сервера,\nпопробуй нажать /start"
-			_, _ = a.tg.SendMessage(telegoutil.Message(telegoutil.ID(from), text))
+		newUser, needInit := user.handler(update)
+		if needInit {
+			a.users[from] = a.init(user, newUser)
 		}
 	}
 }

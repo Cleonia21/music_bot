@@ -22,7 +22,7 @@ func initQueue() *queue {
 
 func (q *queue) set(audio *telego.SendAudioParams) error {
 	if q.len == queueMaxLen {
-		return errors.New("в очередь добавлено максимально количество треков")
+		return errors.New("В очередь добавлено максимально количество треков")
 	}
 	q.len++
 	q.queue <- audio

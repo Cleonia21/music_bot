@@ -36,14 +36,15 @@ func (u *unregUser) sendFirstMenu() {
 	text := "👥Ты можешь выбрать одну из *ролей:*\n\n" +
 		"👤*Принимать:* твои друзья будут присылать треки, а я буду ставить их в очередь\\. " +
 		"Когда ты попросишь я пришлю тебе пакет из треков, по одному от каждого друга\\. " +
-		"Таким образом вы сможете слушать общий плейлист\\.\n\n" +
+		"Таким образом вы сможете слушать общий плейлист\\. " +
+		"Есть одно \"Но\", ты не сможешь добавлять треки в общую очередь\\.😏\n\n" +
 		"👤*Отправлять:* ты сможешь отправлять треки, они попадут в общую очередь, " +
 		"ты услышишь и свои треки, и треки друзей\\."
 	msg := telegoutil.Message(
 		u.id,
 		text,
 	).WithReplyMarkup(keyboard)
-	u.sendMessage(msg)
+	u.sendMessage(msg, true)
 	u.clearData()
 }
 
@@ -64,12 +65,12 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 			hUser := hostUser{}
 			return &hUser, true
 		} else if update.CallbackQuery.Data == "send" {
-			u.sendText("пришли secretMessage")
+			u.sendText("Пришли secretMessage", false)
 			u.clearData()
 		} else {
 			u.tg.Logger().Errorf("data not found")
 			text := "Неизвестная ошибка на стороне сервера,\nпопробуй нажать /start"
-			u.sendText(text)
+			u.sendText(text, false)
 		}
 
 	} else if update.Message != nil {
@@ -83,7 +84,7 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 		}
 
 		if err := u.parseSecretMsg(update.Message.Text); err != nil {
-			u.sendText(err.Error())
+			u.sendText(err.Error(), false)
 			u.sendFirstMenu()
 		} else {
 			return &sendingUser{}, true
@@ -107,6 +108,6 @@ func (u *unregUser) parseSecretMsg(text string) error {
 }
 
 func (u *unregUser) notValidate() {
-	u.sendText("ссылка или пароль не верные")
+	u.sendText("ссылка или пароль не верные", false)
 	u.sendFirstMenu()
 }

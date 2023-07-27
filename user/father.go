@@ -19,23 +19,19 @@ func (u *userFather) fatherInit(tg *telego.Bot, logger *log.Logger, id telego.Ch
 	u.logger = logger
 }
 
-func (u *userFather) sendText(text string) (sentMsg *telego.Message) {
+func (u *userFather) sendText(text string, mode bool) (sentMsg *telego.Message) {
 	if text == "" {
 		return
 	}
-	msg := telegoutil.Message(u.id, text).WithParseMode("MarkdownV2").WithDisableNotification()
-	sentMsg, err := u.tg.SendMessage(msg)
-
-	if err != nil {
-		u.logger.Errorf(err.Error())
-	} else {
-		u.logger.Debugf(utils.MsgToStr(sentMsg))
-	}
-	return
+	msg := telegoutil.Message(u.id, text)
+	return u.sendMessage(msg, mode)
 }
 
-func (u *userFather) sendMessage(msg *telego.SendMessageParams) (sentMsg *telego.Message) {
-	msg.WithParseMode("MarkdownV2").WithDisableNotification()
+func (u *userFather) sendMessage(msg *telego.SendMessageParams, mode bool) (sentMsg *telego.Message) {
+	msg.WithDisableNotification()
+	if mode {
+		msg.WithParseMode("MarkdownV2")
+	}
 	sentMsg, err := u.tg.SendMessage(msg)
 	if err != nil {
 		u.logger.Errorf(err.Error())
