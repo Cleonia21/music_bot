@@ -7,6 +7,7 @@ func (a *Admin) unregToHost(unreg *unregUser, host *hostUser) users {
 		a.tg,
 		a.logger,
 		unreg.id,
+		a.audio,
 	)
 	return host
 }

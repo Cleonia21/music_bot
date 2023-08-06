@@ -47,7 +47,7 @@ func (s *sendingUser) handler(update *telego.Update) (user users, needInit bool)
 		case "/menu":
 			s.sendMenu()
 		default:
-			s.sendAudio(update)
+			s.setAudio(update)
 		}
 	}
 	return s, false
@@ -57,13 +57,13 @@ func (s *sendingUser) sendMenu() {
 	s.sendText(fmt.Sprintf("У тебя в очереди еще %v трек(а/ов)", s.host.trackNum(s.id)), false)
 }
 
-func (s *sendingUser) sendAudio(update *telego.Update) {
+func (s *sendingUser) setAudio(update *telego.Update) {
 	track, err := s.audio.GetParams(update)
 	if err != nil {
 		s.sendText("Не удалось получить трек", false)
 		s.logger.Errorf("err: %v, update: %v", err.Error(), utils.UpdateToStr(update))
 	} else {
-		_, err = s.host.setAudio(s, track)
+		_, err = s.host.setAudioToPlaylistFromUser(s.id, track)
 		if err != nil {
 			s.sendText(err.Error(), false)
 		} else {

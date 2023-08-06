@@ -41,7 +41,7 @@ func (u *userFather) sendMessage(msg *telego.SendMessageParams, notification boo
 	return
 }
 
-func (u *userFather) sendAudio(audio *telego.SendAudioParams) (sentMsg *telego.Message) {
+func (u *userFather) sendAudioToUser(audio *telego.SendAudioParams) (sentMsg *telego.Message) {
 	audio.WithDisableNotification()
 	msg, err := u.tg.SendAudio(audio)
 	if err != nil {
