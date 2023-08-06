@@ -19,16 +19,18 @@ func (u *userFather) fatherInit(tg Bot, logger *log.Logger, id utils.UserID) {
 	u.logger = logger
 }
 
-func (u *userFather) sendText(text string) (sentMsg *telego.Message) {
+func (u *userFather) sendText(text string, notification bool) (sentMsg *telego.Message) {
 	if text == "" {
 		return
 	}
 	msg := telegoutil.Message(u.id.ChatID, text)
-	return u.sendMessage(msg)
+	return u.sendMessage(msg, notification)
 }
 
-func (u *userFather) sendMessage(msg *telego.SendMessageParams) (sentMsg *telego.Message) {
-	msg.WithDisableNotification()
+func (u *userFather) sendMessage(msg *telego.SendMessageParams, notification bool) (sentMsg *telego.Message) {
+	if !notification {
+		msg.WithDisableNotification()
+	}
 	msg.WithParseMode("HTML")
 	sentMsg, err := u.tg.SendMessage(msg)
 	if err != nil {

@@ -22,7 +22,7 @@ func (s *sendingUser) init(tg Bot, logger *log.Logger, chatID utils.UserID, host
 	s.host = host
 	s.audio = audio
 
-	s.sendText("Присылай ссылки с яндекс музыки")
+	s.sendText("Присылай ссылки с яндекс музыки", false)
 }
 
 func (s *sendingUser) connect(user *hostUser) {
@@ -30,7 +30,7 @@ func (s *sendingUser) connect(user *hostUser) {
 }
 
 func (s *sendingUser) disconnect() {
-	s.sendText("Ты вышел из роли")
+	s.sendText("Ты вышел из роли", false)
 	s.host.disconnectUser(s)
 }
 
@@ -54,25 +54,29 @@ func (s *sendingUser) handler(update *telego.Update) (user users, needInit bool)
 }
 
 func (s *sendingUser) sendMenu() {
-	s.sendText(fmt.Sprintf("у в очереди еще %v трек(а/ов)", s.host.trackNum(s.id)))
+	s.sendText(fmt.Sprintf("У тебя в очереди еще %v трек(а/ов)", s.host.trackNum(s.id)), false)
 }
 
 func (s *sendingUser) sendAudio(update *telego.Update) {
 	track, err := s.audio.GetParams(update)
 	if err != nil {
-		s.sendText("Не удалось получить трек")
+		s.sendText("Не удалось получить трек", false)
 		s.logger.Errorf("err: %v, update: %v", err.Error(), utils.UpdateToStr(update))
 	} else {
 		_, err = s.host.setAudio(s, track)
 		if err != nil {
-			s.sendText(err.Error())
+			s.sendText(err.Error(), false)
 		} else {
-			s.sendText("Отправил в очередь")
+			s.sendText("Отправил в очередь", false)
 		}
 	}
 }
 
 func (s *sendingUser) hostOut() {
 	s.host = nil
-	s.sendText("Принимающий пользователь отключился, жми /start")
+	s.sendText("Принимающий пользователь отключился, жми /start", false)
+}
+
+func (s *sendingUser) tracksEndedInQueue() {
+	s.sendText("Принимающий пользователь поросит прислать еще треков", true)
 }

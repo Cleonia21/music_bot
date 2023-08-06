@@ -1,18 +1,19 @@
 package playList
 
 import (
+	"MusicBot/user/utils"
 	"github.com/mymmrac/telego"
 )
 
 type PlayList struct {
-	audios map[telego.ChatID]*queue
+	audios map[utils.UserID]*queue
 }
 
 func (p *PlayList) Init() {
-	p.audios = make(map[telego.ChatID]*queue)
+	p.audios = make(map[utils.UserID]*queue)
 }
 
-func (p *PlayList) SetAudio(id telego.ChatID, audio *telego.SendAudioParams) error {
+func (p *PlayList) SetAudio(id utils.UserID, audio *telego.SendAudioParams) error {
 	qChan, ok := p.audios[id]
 	if !ok {
 		qChan = initQueue()
@@ -35,7 +36,7 @@ func (p *PlayList) GetAudio() (audios []*telego.SendAudioParams, errs []string) 
 }
 
 type Summary struct {
-	ID  telego.ChatID
+	ID  utils.UserID
 	Num int
 }
 
@@ -46,7 +47,7 @@ func (p *PlayList) GetSummary() (s []Summary) {
 	return
 }
 
-func (p *PlayList) UserTrackNum(id telego.ChatID) int {
+func (p *PlayList) UserTrackNum(id utils.UserID) int {
 	que, ok := p.audios[id]
 	if !ok {
 		return 0

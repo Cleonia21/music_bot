@@ -45,7 +45,7 @@ func (u *unregUser) sendFirstMenu() {
 		u.id.ChatID,
 		text,
 	).WithReplyMarkup(keyboard)
-	u.sendMessage(msg)
+	u.sendMessage(msg, false)
 	u.clearData()
 }
 
@@ -66,12 +66,12 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 			hUser := hostUser{}
 			return &hUser, true
 		} else if update.CallbackQuery.Data == "send" {
-			u.sendText("Пришли secretMessage")
+			u.sendText("Пришли secretMessage", false)
 			u.clearData()
 		} else {
 			u.logger.Errorf("data not found")
 			text := "Неизвестная ошибка на стороне сервера,\nпопробуй нажать /start"
-			u.sendText(text)
+			u.sendText(text, false)
 		}
 
 	} else if update.Message != nil {
@@ -85,7 +85,7 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 		}
 
 		if err := u.parseSecretMsg(update.Message.Text); err != nil {
-			u.sendText(err.Error())
+			u.sendText(err.Error(), false)
 			u.sendFirstMenu()
 		} else {
 			return &sendingUser{}, true
@@ -109,6 +109,6 @@ func (u *unregUser) parseSecretMsg(text string) error {
 }
 
 func (u *unregUser) notValidate() {
-	u.sendText("ссылка или пароль не верные")
+	u.sendText("ссылка или пароль не верные", false)
 	u.sendFirstMenu()
 }
