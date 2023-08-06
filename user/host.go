@@ -111,3 +111,7 @@ func (h *hostUser) out() {
 	}
 	h.sendText("Ты вышел из роли")
 }
+
+func (h *hostUser) trackNum(who utils.UserID) int {
+	return h.playList.UserTrackNum(who.ChatID)
+}

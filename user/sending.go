@@ -3,6 +3,7 @@ package user
 import (
 	"MusicBot/audio"
 	"MusicBot/user/utils"
+	"fmt"
 	"github.com/mymmrac/telego"
 	"github.com/withmandala/go-log"
 )
@@ -44,12 +45,16 @@ func (s *sendingUser) handler(update *telego.Update) (user users, needInit bool)
 			s.disconnect()
 			return &unregUser{}, true
 		case "/menu":
-			s.sendText("Эта команда еще не реализованна")
+			s.sendMenu()
 		default:
 			s.sendAudio(update)
 		}
 	}
 	return s, false
+}
+
+func (s *sendingUser) sendMenu() {
+	s.sendText(fmt.Sprintf("у в очереди еще %v трек(а/ов)", s.host.trackNum(s.id)))
 }
 
 func (s *sendingUser) sendAudio(update *telego.Update) {

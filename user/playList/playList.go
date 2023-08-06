@@ -45,3 +45,11 @@ func (p *PlayList) GetSummary() (s []Summary) {
 	}
 	return
 }
+
+func (p *PlayList) UserTrackNum(id telego.ChatID) int {
+	que, ok := p.audios[id]
+	if !ok {
+		return 0
+	}
+	return que.len
+}
