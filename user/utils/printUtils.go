@@ -16,7 +16,11 @@ func UpdateToStr(update *telego.Update) string {
 		return MsgToStr(update.Message)
 	} else if update.CallbackQuery != nil {
 		query := update.CallbackQuery
-		return fmt.Sprintf("{CQ: username(%v)text(%v)data(%v)}", query.From.Username, query.Message.Text, query.Data)
+		return fmt.Sprintf("{CQ: username(%v)text(%v)data(%v)}",
+			query.From.Username,
+			query.Message.Text,
+			query.Data,
+		)
 	} else {
 		return ""
 	}

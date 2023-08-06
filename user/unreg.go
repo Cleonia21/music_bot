@@ -15,7 +15,7 @@ type unregUser struct {
 	blocker bool
 }
 
-func (u *unregUser) Init(tg *telego.Bot, logger *log.Logger, id telego.ChatID) {
+func (u *unregUser) Init(tg Bot, logger *log.Logger, id telego.ChatID) {
 	u.fatherInit(tg, logger, id)
 	u.sendFirstMenu()
 }
@@ -58,7 +58,7 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 			Text:      update.CallbackQuery.Message.Text,
 		})
 		if err != nil {
-			u.tg.Logger().Errorf(err.Error())
+			u.logger.Errorf(err.Error())
 		}
 
 		if update.CallbackQuery.Data == "host" {
@@ -68,7 +68,7 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 			u.sendText("Пришли secretMessage", false)
 			u.clearData()
 		} else {
-			u.tg.Logger().Errorf("data not found")
+			u.logger.Errorf("data not found")
 			text := "Неизвестная ошибка на стороне сервера,\nпопробуй нажать /start"
 			u.sendText(text, false)
 		}

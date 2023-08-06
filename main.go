@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func main() {
+func initTG() (*telego.Bot, <-chan telego.Update) {
 	botToken := "6210745530:AAGaHIzNOzXlQG9JOMYy1M3DQdxzJ0bjSnY"
 
 	// Create Bot with debug on
@@ -24,15 +24,24 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	return tg, updates
+}
+
+func main() {
+	tg, updates := initTG()
 
 	// Stop reviving updates from update channel
 	defer tg.StopLongPolling()
 
 	admin := user.Init(tg)
 
+	//-809440484
 	// Loop through all updates when they came
 	for update := range updates {
 		if update.Message == nil && update.CallbackQuery == nil {
+			continue
+		}
+		if update.Message != nil && update.Message.Chat.Type != "private" {
 			continue
 		}
 		admin.Handler(&update)

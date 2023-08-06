@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ndrewnee/go-yamusic/yamusic"
-	"github.com/rubyist/circuitbreaker"
+	circuit "github.com/rubyist/circuitbreaker"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -41,7 +41,7 @@ func (m *Music) searchTrack(id int) {
 
 // https://music.yandex.ru/album/17678543/track/89854895
 func (m *Music) parseTrackURL(trackURL string) (id int, albumID int, err error) {
-	matched, err := regexp.MatchString(`^https:\/\/music\.yandex\.ru\/album\/[0-9]*\/track\/[0-9]*`, trackURL)
+	matched, err := regexp.MatchString(`^https:\/\/music\.yandex\.(ru|com)\/album\/[0-9]*\/track\/[0-9]*.*`, trackURL)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -74,6 +74,9 @@ type AudioParams struct {
 	Title        string
 	ThumbnailURL string
 }
+
+//https://music.yandex.ru/album/19435876/track/95386879
+//https://music.yandex.com/album/23345073/track/106849229
 
 func (m *Music) GetAudioParams(trackURL string) (AudioParams, error) {
 	id, _, err := m.parseTrackURL(trackURL)

@@ -7,13 +7,18 @@ import (
 	"github.com/withmandala/go-log"
 )
 
+type userID struct {
+	telego.ChatID
+	firstName string
+}
+
 type userFather struct {
-	tg     *telego.Bot
+	tg     Bot
 	id     telego.ChatID
 	logger *log.Logger
 }
 
-func (u *userFather) fatherInit(tg *telego.Bot, logger *log.Logger, id telego.ChatID) {
+func (u *userFather) fatherInit(tg Bot, logger *log.Logger, id telego.ChatID) {
 	u.tg = tg
 	u.id = id
 	u.logger = logger
@@ -26,6 +31,12 @@ func (u *userFather) sendText(text string, mode bool) (sentMsg *telego.Message) 
 	msg := telegoutil.Message(u.id, text)
 	return u.sendMessage(msg, mode)
 }
+
+/*
+msg := telegoutil.Message(telegoutil.ID(update.Message.From.ID), fmt.Sprintf("[inline mention of a user](tg://user?id=%v)", update.Message.From.ID))
+msg.WithParseMode("MarkdownV2")
+_, _ = tg.SendMessage(msg)
+*/
 
 func (u *userFather) sendMessage(msg *telego.SendMessageParams, mode bool) (sentMsg *telego.Message) {
 	msg.WithDisableNotification()

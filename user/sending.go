@@ -13,7 +13,7 @@ type sendingUser struct {
 	audio *audio.Audio
 }
 
-func (s *sendingUser) init(tg *telego.Bot, logger *log.Logger, chatID telego.ChatID, host *hostUser,
+func (s *sendingUser) init(tg Bot, logger *log.Logger, chatID telego.ChatID, host *hostUser,
 	audio *audio.Audio) {
 
 	s.fatherInit(tg, logger, chatID)
@@ -28,6 +28,11 @@ func (s *sendingUser) connect(user *hostUser) {
 	s.host = user
 }
 
+func (s *sendingUser) disconnect() {
+	s.sendText("Ты вышел из роли", false)
+	s.host.disconnectUser(s)
+}
+
 func (s *sendingUser) handler(update *telego.Update) (user users, needInit bool) {
 	if update.Message != nil {
 		if s.host == nil {
@@ -36,6 +41,7 @@ func (s *sendingUser) handler(update *telego.Update) (user users, needInit bool)
 
 		switch update.Message.Text {
 		case "/start":
+			s.disconnect()
 			return &unregUser{}, true
 		case "/menu":
 			s.sendText("Эта команда еще не реализованна", false)

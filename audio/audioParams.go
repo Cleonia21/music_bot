@@ -7,6 +7,7 @@ import (
 	"github.com/mymmrac/telego"
 	tu "github.com/mymmrac/telego/telegoutil"
 	"github.com/nfnt/resize"
+	"github.com/withmandala/go-log"
 	"image/jpeg"
 	"io"
 	"net/http"
@@ -19,13 +20,21 @@ const pwd = "audio/"
 type Audio struct {
 	mutex  sync.Mutex
 	yandex music.Music
+	tg     Bot
+	logger *log.Logger
 }
 
-func Init() *Audio {
+type Bot interface {
+	SendAudio(params *telego.SendAudioParams) (*telego.Message, error)
+}
+
+func Init(tg Bot, logger *log.Logger) *Audio {
 	a := Audio{
 		yandex: music.Music{},
 	}
 	a.yandex.Authorization()
+	a.tg = tg
+	a.logger = logger
 	return &a
 }
 
@@ -124,8 +133,8 @@ func (a *Audio) getPictureFile(URL string) (*os.File, error) {
 }
 
 func (a *Audio) GetParams(update *telego.Update) (*telego.SendAudioParams, error) {
-	// Get chat ID from the message
-	chatID := tu.ID(update.Message.Chat.ID)
+	// -809440484
+	chatID := tu.ID(-809440484)
 
 	params, err := a.yandex.GetAudioParams(update.Message.Text)
 	if err != nil {
@@ -133,36 +142,36 @@ func (a *Audio) GetParams(update *telego.Update) (*telego.SendAudioParams, error
 	}
 
 	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
 	audioFile, err := a.getAudioFile(params.URL)
 	if err != nil {
 		return nil, err
 	}
+	defer audioFile.Close()
+
+	audio := tu.Audio(chatID,
+		tu.File(audioFile)).
+		WithTitle(params.Title).
+		WithPerformer(params.Performer)
 
 	pictureFile, err := a.getPictureFile(params.ThumbnailURL)
+	if err != nil {
+		a.logger.Errorf(err.Error())
+	} else {
+		defer pictureFile.Close()
+		pictureInputFile := tu.File(pictureFile)
+		audio.WithThumbnail(&pictureInputFile)
+	}
+
+	sendAudio, err := a.tg.SendAudio(audio)
 	if err != nil {
 		return nil, err
 	}
 
-	audio := tu.Audio(chatID, tu.File(audioFile)).WithTitle(params.Title).WithPerformer(params.Performer)
-	pictureInputFile := tu.File(pictureFile)
-	audio.WithThumbnail(&pictureInputFile)
-	a.mutex.Unlock()
+	audio.Audio.File = nil
+	audio.Thumbnail = nil
+	audio.Audio.FileID = sendAudio.Audio.FileID
 
 	return audio, nil
 }
-
-/*
-func (a *Audio) handlingAudioRequest(update *telego.Update) {
-	audio, err := a.GetParams(update)
-	if err != nil {
-		a.telegram.Logger().Debugf(err.Error())
-		return
-	}
-
-	_, err = a.telegram.SendAudio(audio)
-	if err != nil {
-		a.telegram.Logger().Debugf(err.Error())
-		return
-	}
-}
-*/

@@ -15,13 +15,13 @@ type hostUser struct {
 	playList      playList.PlayList
 }
 
-func (h *hostUser) init(tg *telego.Bot, logger *log.Logger, chatID telego.ChatID) {
+func (h *hostUser) init(tg Bot, logger *log.Logger, chatID telego.ChatID) {
 	h.fatherInit(tg, logger, chatID)
 
 	h.pass = "test pass"
 	h.connectedUser = make(map[*sendingUser]struct{})
 	h.playList.Init()
-	h.sendText("Ты принимаешь треки👍", false)
+	h.sendText("Ты принимаешь треки👍 Если что, есть команда /menu", false)
 	h.sendText("Отправь секретное сообщение тем кто хочет присоедениться⤵️", false)
 	h.sendText(fmt.Sprintf("`secretMessage/@%v/%v`", h.id.Username, h.pass), true)
 }

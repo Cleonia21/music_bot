@@ -13,22 +13,29 @@ type users interface {
 	getID() telego.ChatID
 }
 
+type Bot interface {
+	SendMessage(params *telego.SendMessageParams) (*telego.Message, error)
+	SendAudio(params *telego.SendAudioParams) (*telego.Message, error)
+	AnswerCallbackQuery(params *telego.AnswerCallbackQueryParams) error
+	EditMessageText(params *telego.EditMessageTextParams) (*telego.Message, error)
+}
+
 type Admin struct {
-	tg     *telego.Bot
-	users  map[int64]users
+	tg     Bot
+	users  map[telego.ChatID]users
 	audio  *audio.Audio
 	logger *log.Logger
 }
 
-func Init(tg *telego.Bot) *Admin {
+func Init(tg Bot) *Admin {
 	l := log.New(os.Stderr)
 	l.WithColor()
 	l.WithDebug()
 
 	a := Admin{
 		tg:     tg,
-		users:  make(map[int64]users),
-		audio:  audio.Init(),
+		users:  make(map[telego.ChatID]users),
+		audio:  audio.Init(tg, l),
 		logger: l,
 	}
 	return &a
@@ -37,89 +44,21 @@ func Init(tg *telego.Bot) *Admin {
 func (a *Admin) Handler(update *telego.Update) {
 	a.logger.Debugf("get update: " + utils.UpdateToStr(update))
 
-	var from int64
-	if update.Message != nil {
-		from = update.Message.From.ID
-	} else if update.CallbackQuery != nil {
-		from = update.CallbackQuery.From.ID
-	}
+	userID := utils.UpdateToID(update)
+	user, ok := a.users[userID]
 
-	user, ok := a.users[from]
 	if !ok {
 		user := &unregUser{}
 		user.Init(
 			a.tg,
 			a.logger,
-			telego.ChatID{
-				ID:       update.Message.Chat.ID,
-				Username: update.Message.From.Username,
-			},
+			telego.ChatID{ID: update.Message.Chat.ID, Username: update.Message.From.Username},
 		)
-		a.users[from] = users(user)
+		a.users[userID] = users(user)
 	} else {
 		newUser, needInit := user.handler(update)
 		if needInit {
-			a.users[from] = a.init(user, newUser)
+			a.users[userID] = a.userSwitch(user, newUser)
 		}
 	}
-}
-
-func (a *Admin) init(from, to users) users {
-	var unreg *unregUser
-	var sending *sendingUser
-	var host *hostUser
-	ok := false
-
-	if unreg, ok = from.(*unregUser); ok {
-		if host, ok = to.(*hostUser); ok {
-			host.init(
-				a.tg,
-				a.logger,
-				unreg.id,
-			)
-			return host
-		} else if sending, ok = to.(*sendingUser); ok {
-			host, ok = a.searchUser(telego.ChatID{Username: unreg.url}).(*hostUser)
-			if ok && host.validatePass(unreg.pass) {
-				sending.init(
-					a.tg,
-					a.logger,
-					unreg.id,
-					host,
-					a.audio,
-				)
-				host.join(sending)
-				return sending
-			} else {
-				unreg.notValidate()
-				return unreg
-			}
-		}
-	} else if unreg, ok = to.(*unregUser); ok {
-		if host, ok = from.(*hostUser); ok {
-			unreg.Init(
-				a.tg,
-				a.logger,
-				host.id,
-			)
-		} else if sending, ok = from.(*sendingUser); ok {
-			unreg.Init(
-				a.tg,
-				a.logger,
-				sending.id,
-			)
-		}
-		return unreg
-	}
-	return nil
-}
-
-func (a *Admin) searchUser(id telego.ChatID) users {
-	for _, user := range a.users {
-		if id.ID == user.getID().ID ||
-			id.Username == user.getID().Username {
-			return user
-		}
-	}
-	return nil
 }

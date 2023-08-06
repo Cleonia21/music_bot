@@ -13,11 +13,12 @@ func (p *PlayList) Init() {
 }
 
 func (p *PlayList) SetAudio(id telego.ChatID, audio *telego.SendAudioParams) error {
-	_, ok := p.audios[id]
+	qChan, ok := p.audios[id]
 	if !ok {
-		p.audios[id] = initQueue()
+		qChan = initQueue()
+		p.audios[id] = qChan
 	}
-	err := p.audios[id].set(audio)
+	err := qChan.set(audio)
 	return err
 }
 
