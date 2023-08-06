@@ -1,6 +1,7 @@
 package user
 
 import (
+	"MusicBot/user/utils"
 	"errors"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
@@ -15,7 +16,7 @@ type unregUser struct {
 	blocker bool
 }
 
-func (u *unregUser) Init(tg Bot, logger *log.Logger, id telego.ChatID) {
+func (u *unregUser) Init(tg Bot, logger *log.Logger, id utils.UserID) {
 	u.fatherInit(tg, logger, id)
 	u.sendFirstMenu()
 }
@@ -33,18 +34,18 @@ func (u *unregUser) sendFirstMenu() {
 			telegoutil.InlineKeyboardButton("отправлять").WithCallbackData("send"),
 		),
 	)
-	text := "👥Ты можешь выбрать одну из *ролей:*\n\n" +
-		"👤*Принимать:* твои друзья будут присылать треки, а я буду ставить их в очередь\\. " +
-		"Когда ты попросишь я пришлю тебе пакет из треков, по одному от каждого друга\\. " +
-		"Таким образом вы сможете слушать общий плейлист\\. " +
-		"Есть одно \"Но\", ты не сможешь добавлять треки в общую очередь\\.😏\n\n" +
-		"👤*Отправлять:* ты сможешь отправлять треки, они попадут в общую очередь, " +
-		"ты услышишь и свои треки, и треки друзей\\."
+	text := "👥Ты можешь выбрать одну из <b>ролей:</b>\n\n" +
+		"👤<b>Принимать:</b> твои друзья будут присылать треки, а я буду ставить их в очередь. " +
+		"Когда ты попросишь я пришлю тебе пакет из треков, по одному от каждого друга. " +
+		"Таким образом вы сможете слушать общий плейлист. " +
+		"Есть одно \"Но\", ты не сможешь добавлять треки в общую очередь.😏\n\n" +
+		"👤<b>Отправлять:</b> ты сможешь отправлять треки, они попадут в общую очередь, " +
+		"ты услышишь и свои треки, и треки друзей."
 	msg := telegoutil.Message(
-		u.id,
+		u.id.ChatID,
 		text,
 	).WithReplyMarkup(keyboard)
-	u.sendMessage(msg, true)
+	u.sendMessage(msg)
 	u.clearData()
 }
 
@@ -65,12 +66,12 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 			hUser := hostUser{}
 			return &hUser, true
 		} else if update.CallbackQuery.Data == "send" {
-			u.sendText("Пришли secretMessage", false)
+			u.sendText("Пришли secretMessage")
 			u.clearData()
 		} else {
 			u.logger.Errorf("data not found")
 			text := "Неизвестная ошибка на стороне сервера,\nпопробуй нажать /start"
-			u.sendText(text, false)
+			u.sendText(text)
 		}
 
 	} else if update.Message != nil {
@@ -84,7 +85,7 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 		}
 
 		if err := u.parseSecretMsg(update.Message.Text); err != nil {
-			u.sendText(err.Error(), false)
+			u.sendText(err.Error())
 			u.sendFirstMenu()
 		} else {
 			return &sendingUser{}, true
@@ -108,6 +109,6 @@ func (u *unregUser) parseSecretMsg(text string) error {
 }
 
 func (u *unregUser) notValidate() {
-	u.sendText("ссылка или пароль не верные", false)
+	u.sendText("ссылка или пароль не верные")
 	u.sendFirstMenu()
 }

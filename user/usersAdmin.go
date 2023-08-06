@@ -10,7 +10,7 @@ import (
 
 type users interface {
 	handler(update *telego.Update) (users, bool)
-	getID() telego.ChatID
+	getID() utils.UserID
 }
 
 type Bot interface {
@@ -22,7 +22,7 @@ type Bot interface {
 
 type Admin struct {
 	tg     Bot
-	users  map[telego.ChatID]users
+	users  map[utils.UserID]users
 	audio  *audio.Audio
 	logger *log.Logger
 }
@@ -34,7 +34,7 @@ func Init(tg Bot) *Admin {
 
 	a := Admin{
 		tg:     tg,
-		users:  make(map[telego.ChatID]users),
+		users:  make(map[utils.UserID]users),
 		audio:  audio.Init(tg, l),
 		logger: l,
 	}
@@ -44,21 +44,21 @@ func Init(tg Bot) *Admin {
 func (a *Admin) Handler(update *telego.Update) {
 	a.logger.Debugf("get update: " + utils.UpdateToStr(update))
 
-	userID := utils.UpdateToID(update)
-	user, ok := a.users[userID]
+	id := utils.UpdateToID(update)
+	user, ok := a.users[id]
 
 	if !ok {
 		user := &unregUser{}
 		user.Init(
 			a.tg,
 			a.logger,
-			telego.ChatID{ID: update.Message.Chat.ID, Username: update.Message.From.Username},
+			id,
 		)
-		a.users[userID] = users(user)
+		a.users[id] = users(user)
 	} else {
 		newUser, needInit := user.handler(update)
 		if needInit {
-			a.users[userID] = a.userSwitch(user, newUser)
+			a.users[id] = a.userSwitch(user, newUser)
 		}
 	}
 }
