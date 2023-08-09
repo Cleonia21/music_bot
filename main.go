@@ -27,7 +27,7 @@ func initTG() (*telego.Bot, <-chan telego.Update) {
 	return tg, updates
 }
 
-func main() {
+func start() {
 	tg, updates := initTG()
 
 	// Stop reviving updates from update channel
@@ -46,4 +46,8 @@ func main() {
 		}
 		admin.Handler(&update)
 	}
+}
+
+func main() {
+	start()
 }

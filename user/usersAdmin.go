@@ -3,6 +3,7 @@ package user
 import (
 	"MusicBot/audio"
 	"MusicBot/user/utils"
+	utils2 "MusicBot/utils"
 	"github.com/mymmrac/telego"
 	"github.com/withmandala/go-log"
 	"os"
@@ -42,7 +43,7 @@ func Init(tg Bot) *Admin {
 }
 
 func (a *Admin) Handler(update *telego.Update) {
-	a.logger.Debugf("get update: " + utils.UpdateToStr(update))
+	a.logger.Debugf("get update: " + utils2.UpdateToStr(update))
 
 	id := utils.UpdateToID(update)
 	user, ok := a.users[id]

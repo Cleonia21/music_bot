@@ -3,6 +3,7 @@ package user
 import (
 	"MusicBot/audio"
 	"MusicBot/user/utils"
+	utils2 "MusicBot/utils"
 	"fmt"
 	"github.com/mymmrac/telego"
 	"github.com/withmandala/go-log"
@@ -61,7 +62,7 @@ func (s *sendingUser) setAudio(update *telego.Update) {
 	track, err := s.audio.GetParams(update)
 	if err != nil {
 		s.sendText("Не удалось получить трек", false)
-		s.logger.Errorf("err: %v, update: %v", err.Error(), utils.UpdateToStr(update))
+		s.logger.Errorf("err: %v, update: %v", err.Error(), utils2.UpdateToStr(update))
 	} else {
 		_, err = s.host.setAudioToPlaylistFromUser(s.id, track)
 		if err != nil {

@@ -4,6 +4,7 @@ import (
 	Audio "MusicBot/audio"
 	"MusicBot/user/playList"
 	"MusicBot/user/utils"
+	utils2 "MusicBot/utils"
 	"fmt"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
@@ -78,7 +79,7 @@ func (h *hostUser) setAudioToPlaylist(update *telego.Update) {
 	track, err := h.audio.GetParams(update)
 	if err != nil {
 		h.sendText("Не удалось получить трек", false)
-		h.logger.Errorf("err: %v, update: %v", err.Error(), utils.UpdateToStr(update))
+		h.logger.Errorf("err: %v, update: %v", err.Error(), utils2.UpdateToStr(update))
 	} else {
 		track.ChatID = h.id.ChatID
 		err = h.playList.SetAudio(h.id, track)

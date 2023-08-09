@@ -2,6 +2,7 @@ package user
 
 import (
 	"MusicBot/user/utils"
+	utils2 "MusicBot/utils"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/withmandala/go-log"
@@ -36,7 +37,7 @@ func (u *userFather) sendMessage(msg *telego.SendMessageParams, notification boo
 	if err != nil {
 		u.logger.Errorf(err.Error())
 	} else {
-		u.logger.Debugf(utils.MsgToStr(sentMsg))
+		u.logger.Debugf(utils2.MsgToStr(sentMsg))
 	}
 	return
 }
@@ -47,7 +48,7 @@ func (u *userFather) sendAudioToUser(audio *telego.SendAudioParams) (sentMsg *te
 	if err != nil {
 		u.logger.Errorf(err.Error())
 	} else {
-		u.logger.Debugf(utils.MsgToStr(msg))
+		u.logger.Debugf(utils2.MsgToStr(msg))
 	}
 	return msg
 }
