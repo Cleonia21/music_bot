@@ -4,8 +4,6 @@ import "github.com/mymmrac/telego"
 
 func (a *Admin) unregToHost(unreg *unregUser, host *hostUser) users {
 	host.init(
-		a.tg,
-		a.logger,
 		unreg.id,
 		a.audio,
 	)
@@ -16,8 +14,6 @@ func (a *Admin) unregToSending(unreg *unregUser, sending *sendingUser) users {
 	host, ok := a.searchUser(telego.ChatID{Username: unreg.url}).(*hostUser)
 	if ok && host.validatePass(unreg.pass) {
 		sending.init(
-			a.tg,
-			a.logger,
 			unreg.id,
 			host,
 			a.audio,
@@ -32,8 +28,6 @@ func (a *Admin) unregToSending(unreg *unregUser, sending *sendingUser) users {
 
 func (a *Admin) hostToUnreg(host *hostUser, unreg *unregUser) users {
 	unreg.Init(
-		a.tg,
-		a.logger,
 		host.id,
 	)
 	return unreg
@@ -41,8 +35,6 @@ func (a *Admin) hostToUnreg(host *hostUser, unreg *unregUser) users {
 
 func (a *Admin) sendingToUnreg(sending *sendingUser, unreg *unregUser) users {
 	unreg.Init(
-		a.tg,
-		a.logger,
 		sending.id,
 	)
 	return unreg

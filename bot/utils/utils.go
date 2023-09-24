@@ -14,6 +14,6 @@ func NewLogger(pwd string) (logger *log.Logger, err error) {
 	}
 	logger = log.New(file)
 	logger.WithDebug()
-	logger.WithColor()
+	//logger.WithColor()
 	return
 }

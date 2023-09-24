@@ -1,11 +1,12 @@
 package user
 
 import (
+	"MusicBot/log"
+	"MusicBot/telegram"
 	"MusicBot/user/utils"
 	"errors"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
-	"github.com/withmandala/go-log"
 	"strings"
 )
 
@@ -16,8 +17,8 @@ type unregUser struct {
 	blocker bool
 }
 
-func (u *unregUser) Init(tg Bot, logger *log.Logger, id utils.UserID) {
-	u.fatherInit(tg, logger, id)
+func (u *unregUser) Init(id utils.UserID) {
+	u.fatherInit(id)
 	u.sendFirstMenu()
 }
 
@@ -52,13 +53,13 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 	if update.CallbackQuery != nil {
 		u.blocker = false
 
-		_, err := u.tg.EditMessageText(&telego.EditMessageTextParams{
+		_, err := telegram.TG.EditMessageText(&telego.EditMessageTextParams{
 			ChatID:    telego.ChatID{ID: update.CallbackQuery.Message.Chat.ID},
 			MessageID: update.CallbackQuery.Message.MessageID,
 			Text:      update.CallbackQuery.Message.Text,
 		})
 		if err != nil {
-			u.logger.Errorf(err.Error())
+			log.Logger.Errorf(err.Error())
 		}
 
 		if update.CallbackQuery.Data == "host" {
@@ -68,7 +69,7 @@ func (u *unregUser) handler(update *telego.Update) (user users, needInit bool) {
 			u.sendText("Пришли secretMessage", false)
 			u.clearData()
 		} else {
-			u.logger.Errorf("data not found")
+			log.Logger.Errorf("data not found")
 			text := "Неизвестная ошибка на стороне сервера,\nпопробуй нажать /start"
 			u.sendText(text, false)
 		}

@@ -1,5 +1,5 @@
 tmp*
-test*
+test
 .idea
 config.go
 audio/music/config.go

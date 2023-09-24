@@ -1,4 +1,4 @@
-package music
+package yandex
 
 import (
 	"context"
@@ -69,16 +69,32 @@ func (m *Music) parseTrackURL(trackURL string) (id int, albumID int, err error) 
 }
 
 type AudioParams struct {
-	URL          string
-	Performer    string
-	Title        string
-	ThumbnailURL string
+	url          string
+	performer    string
+	title        string
+	thumbnailURL string
+}
+
+func (a AudioParams) URL() string {
+	return a.url
+}
+
+func (a AudioParams) Performer() string {
+	return a.performer
+}
+
+func (a AudioParams) Title() string {
+	return a.title
+}
+
+func (a AudioParams) ThumbnailURL() string {
+	return a.thumbnailURL
 }
 
 //https://music.yandex.ru/album/19435876/track/95386879
 //https://music.yandex.com/album/23345073/track/106849229
 
-func (m *Music) GetAudioParams(trackURL string) (AudioParams, error) {
+func (m *Music) AudioInf(trackURL string) (AudioParams, error) {
 	id, _, err := m.parseTrackURL(trackURL)
 	if err != nil {
 		return AudioParams{}, err
@@ -93,18 +109,17 @@ func (m *Music) GetAudioParams(trackURL string) (AudioParams, error) {
 
 	params := AudioParams{}
 
-	params.URL, err = m.client.Tracks().GetDownloadURL(context.Background(), id)
-	//spew.Dump(params.URL)
+	params.url, err = m.client.Tracks().GetDownloadURL(context.Background(), id)
 	if err != nil {
 		return AudioParams{}, err
 	}
 
 	for _, artist := range track.Artists {
-		params.Performer += artist.Name + ", "
+		params.performer += artist.Name + ", "
 	}
-	params.Performer = params.Performer[:len(params.Performer)-2]
+	params.performer = params.performer[:len(params.performer)-2]
 
-	params.Title = track.Title
-	params.ThumbnailURL = "https://" + track.OgImage[:len(track.OgImage)-2] + "400x400"
+	params.title = track.Title
+	params.thumbnailURL = "https://" + track.OgImage[:len(track.OgImage)-2] + "400x400"
 	return params, nil
 }

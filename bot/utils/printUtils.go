@@ -30,12 +30,19 @@ func MsgToStr(msg *telego.Message) string {
 	if msg != nil {
 		return fmt.Sprintf("{MSG: username(%v)text(%v)btns(%v)audio(%v)}",
 			msg.Chat.Username,
-			msg.Text,
+			textCompression(msg.Text, 20),
 			replyMarkupToStr(msg.ReplyMarkup),
 			audioToStr(msg.Audio),
 		)
 	}
 	return "{MSG: nil}"
+}
+
+func textCompression(text string, length int) string {
+	if len(text) > length {
+		return text[:length] + "..."
+	}
+	return text
 }
 
 func replyMarkupToStr(markup *telego.InlineKeyboardMarkup) string {

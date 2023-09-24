@@ -2,11 +2,10 @@ package user
 
 import (
 	"MusicBot/audio"
+	"MusicBot/log"
 	"MusicBot/user/utils"
 	utils2 "MusicBot/utils"
 	"github.com/mymmrac/telego"
-	"github.com/withmandala/go-log"
-	"os"
 )
 
 type users interface {
@@ -22,28 +21,20 @@ type Bot interface {
 }
 
 type Admin struct {
-	tg     Bot
-	users  map[utils.UserID]users
-	audio  *audio.Audio
-	logger *log.Logger
+	users map[utils.UserID]users
+	audio *audio.Audio
 }
 
-func Init(tg Bot) *Admin {
-	l := log.New(os.Stderr)
-	l.WithColor()
-	l.WithDebug()
-
+func Init() *Admin {
 	a := Admin{
-		tg:     tg,
-		users:  make(map[utils.UserID]users),
-		audio:  audio.Init(tg, l),
-		logger: l,
+		users: make(map[utils.UserID]users),
+		audio: audio.Init(),
 	}
 	return &a
 }
 
 func (a *Admin) Handler(update *telego.Update) {
-	a.logger.Debugf("get update: " + utils2.UpdateToStr(update))
+	log.Logger.Debugf("get update: " + utils2.UpdateToStr(update))
 
 	id := utils.UpdateToID(update)
 	user, ok := a.users[id]
@@ -51,8 +42,6 @@ func (a *Admin) Handler(update *telego.Update) {
 	if !ok {
 		user := &unregUser{}
 		user.Init(
-			a.tg,
-			a.logger,
 			id,
 		)
 		a.users[id] = users(user)

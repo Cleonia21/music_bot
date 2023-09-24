@@ -1,23 +1,20 @@
 package user
 
 import (
+	"MusicBot/log"
+	"MusicBot/telegram"
 	"MusicBot/user/utils"
 	utils2 "MusicBot/utils"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
-	"github.com/withmandala/go-log"
 )
 
 type userFather struct {
-	tg     Bot
-	id     utils.UserID
-	logger *log.Logger
+	id utils.UserID
 }
 
-func (u *userFather) fatherInit(tg Bot, logger *log.Logger, id utils.UserID) {
-	u.tg = tg
+func (u *userFather) fatherInit(id utils.UserID) {
 	u.id = id
-	u.logger = logger
 }
 
 func (u *userFather) sendText(text string, notification bool) (sentMsg *telego.Message) {
@@ -33,22 +30,22 @@ func (u *userFather) sendMessage(msg *telego.SendMessageParams, notification boo
 		msg.WithDisableNotification()
 	}
 	msg.WithParseMode("HTML")
-	sentMsg, err := u.tg.SendMessage(msg)
+	sentMsg, err := telegram.TG.SendMessage(msg)
 	if err != nil {
-		u.logger.Errorf(err.Error())
+		log.Logger.Errorf(err.Error())
 	} else {
-		u.logger.Debugf(utils2.MsgToStr(sentMsg))
+		log.Logger.Debugf(utils2.MsgToStr(sentMsg))
 	}
 	return
 }
 
 func (u *userFather) sendAudioToUser(audio *telego.SendAudioParams) (sentMsg *telego.Message) {
 	audio.WithDisableNotification()
-	msg, err := u.tg.SendAudio(audio)
+	msg, err := telegram.TG.SendAudio(audio)
 	if err != nil {
-		u.logger.Errorf(err.Error())
+		log.Logger.Errorf(err.Error())
 	} else {
-		u.logger.Debugf(utils2.MsgToStr(msg))
+		log.Logger.Debugf(utils2.MsgToStr(msg))
 	}
 	return msg
 }

@@ -2,13 +2,14 @@ package user
 
 import (
 	Audio "MusicBot/audio"
+	"MusicBot/log"
+	"MusicBot/telegram"
 	"MusicBot/user/playList"
 	"MusicBot/user/utils"
 	utils2 "MusicBot/utils"
 	"fmt"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
-	"github.com/withmandala/go-log"
 )
 
 type hostUser struct {
@@ -19,8 +20,8 @@ type hostUser struct {
 	audio         *Audio.Audio
 }
 
-func (h *hostUser) init(tg Bot, logger *log.Logger, chatID utils.UserID, audio *Audio.Audio) {
-	h.fatherInit(tg, logger, chatID)
+func (h *hostUser) init(chatID utils.UserID, audio *Audio.Audio) {
+	h.fatherInit(chatID)
 
 	h.pass = "test pass"
 	h.connectedUser = make(map[utils.UserID]*sendingUser)
@@ -53,7 +54,7 @@ func (h *hostUser) handler(update *telego.Update) (user users, needInit bool) {
 		case "sendNotify":
 			h.sendNotify()
 		}
-		_ = h.tg.AnswerCallbackQuery(
+		_ = telegram.TG.AnswerCallbackQuery(
 			&telego.AnswerCallbackQueryParams{CallbackQueryID: update.CallbackQuery.ID})
 	}
 	return h, false
@@ -79,7 +80,7 @@ func (h *hostUser) setAudioToPlaylist(update *telego.Update) {
 	track, err := h.audio.GetParams(update)
 	if err != nil {
 		h.sendText("Не удалось получить трек", false)
-		h.logger.Errorf("err: %v, update: %v", err.Error(), utils2.UpdateToStr(update))
+		log.Logger.Errorf("err: %v, update: %v", err.Error(), utils2.UpdateToStr(update))
 	} else {
 		track.ChatID = h.id.ChatID
 		err = h.playList.SetAudio(h.id, track)
