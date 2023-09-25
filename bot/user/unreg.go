@@ -109,6 +109,6 @@ func (u *unregUser) parseSecretMsg(text string) error {
 }
 
 func (u *unregUser) notValidate() {
-	u.sendText("ссылка или пароль не верные", false)
+	u.sendText("не верное secretMessage", false)
 	u.sendFirstMenu()
 }

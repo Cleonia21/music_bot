@@ -7,6 +7,7 @@ import (
 	utils2 "MusicBot/utils"
 	"fmt"
 	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegoutil"
 )
 
 type sendingUser struct {
@@ -23,7 +24,14 @@ func (s *sendingUser) init(chatID utils.UserID, host *hostUser,
 	s.host = host
 	s.audio = audio
 
-	s.sendText("Присылай ссылки с яндекс музыки", false)
+	s.sendText("Вернуться в начало: /start\nУправление ботом: /menu\nКак прислать музыку: /info", false)
+}
+
+func (s *sendingUser) sendInfo() {
+	text := "Ты можешь:\n" +
+		"❕Отправить ссылку на трек из Яндекс Музыки\n" +
+		"❕Прислать аудиофайл со своего устройства"
+	s.sendMessage(telegoutil.Message(s.id.ChatID, text), true)
 }
 
 func (s *sendingUser) connect(user *hostUser) {
@@ -47,6 +55,8 @@ func (s *sendingUser) handler(update *telego.Update) (user users, needInit bool)
 			return &unregUser{}, true
 		case "/menu":
 			s.sendMenu()
+		case "/info":
+			s.sendInfo()
 		default:
 			s.setAudio(update)
 		}

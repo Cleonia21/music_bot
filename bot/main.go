@@ -32,6 +32,7 @@ func start() {
 }
 
 func main() {
+
 	telegram.Init()
 	log.Init()
 	start()

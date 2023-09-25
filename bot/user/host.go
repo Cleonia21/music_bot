@@ -26,10 +26,10 @@ func (h *hostUser) init(chatID utils.UserID, audio *Audio.Audio) {
 	h.pass = "test pass"
 	h.connectedUser = make(map[utils.UserID]*sendingUser)
 	h.playList.Init()
+	h.sendText("Вернуться в начало: /start\nУправление ботом: /menu\nКак прислать музыку: /info", false)
 	h.sendText("Ты принимаешь треки👍", false)
 	h.sendText("Отправь секретное сообщение тем кто хочет присоедениться⤵️", false)
-	h.sendText(fmt.Sprintf("<code>secretMessage/@%v/%v</code>", h.id.ChatID.Username, h.pass), false)
-	h.sendText("Присылай ссылки с яндекс музыки или жми команду /menu", false)
+	h.sendText(fmt.Sprintf("<code>secretMessage/@%v/%v</code>", h.id.ChatID.Username, generatePassword()), false)
 	h.audio = audio
 }
 
@@ -41,6 +41,8 @@ func (h *hostUser) handler(update *telego.Update) (user users, needInit bool) {
 		case "/start":
 			h.out()
 			return &unregUser{}, true
+		case "/info":
+			h.sendInfo()
 		default:
 			h.setAudioToPlaylist(update)
 		}
@@ -73,7 +75,14 @@ func (h *hostUser) sendMenu() {
 			telegoutil.InlineKeyboardButton("оповестить 👤 у которых мало 🎧").WithCallbackData("sendNotify"),
 		),
 	)
-	h.sendMessage(telegoutil.Message(h.id.ChatID, text).WithReplyMarkup(keyboard), false)
+	h.sendMessage(telegoutil.Message(h.id.ChatID, text).WithReplyMarkup(keyboard), true)
+}
+
+func (h *hostUser) sendInfo() {
+	text := "Ты можешь:\n" +
+		"❕Отправить ссылку на трек из Яндекс Музыки\n" +
+		"❕Прислать аудиофайл со своего устройства"
+	h.sendMessage(telegoutil.Message(h.id.ChatID, text), true)
 }
 
 func (h *hostUser) setAudioToPlaylist(update *telego.Update) {
