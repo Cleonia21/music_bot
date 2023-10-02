@@ -26,7 +26,7 @@ func (a *Audio) GetParams(update *telego.Update) (*telego.SendAudioParams, error
 		audio = tu.Audio(tu.ID(update.Message.Chat.ID), telego.InputFile{FileID: update.Message.Audio.FileID})
 		audio.WithTitle(update.Message.Audio.Title).WithPerformer(update.Message.Audio.Performer)
 	} else {
-		params, err := a.yandex.AudioInf(update.Message.Text)
+		params, err := a.yandex.URLtoAudioParams(update.Message.Text)
 		if err != nil {
 			return nil, err
 		}

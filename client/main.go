@@ -2,19 +2,18 @@ package main
 
 import (
 	"context"
-	"os"
-	"os/signal"
-
 	"github.com/go-faster/errors"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
 	"github.com/gotd/td/examples"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth"
+	"github.com/gotd/td/telegram/message"
 	"github.com/gotd/td/telegram/updates"
 	updhook "github.com/gotd/td/telegram/updates/hook"
 	"github.com/gotd/td/tg"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"os"
+	"os/signal"
 )
 
 func main() {
@@ -55,14 +54,22 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	// Setup message update handlers.
-	d.OnNewChannelMessage(func(ctx context.Context, e tg.Entities, update *tg.UpdateNewChannelMessage) error {
-		log.Info("Channel message", zap.Any("message", update.Message))
-		return nil
-	})
-	d.OnNewMessage(func(ctx context.Context, e tg.Entities, update *tg.UpdateNewMessage) error {
-		log.Info("Message", zap.Any("message", update.Message))
-		return nil
+	// Raw MTProto API client, allows making raw RPC calls.
+	//api := tg.NewClient(client)
+
+	// Helper for sending messages.
+	sender := message.NewSender(client.API())
+	sender.
+		d.OnNewMessage(func(ctx context.Context, entities tg.Entities, update *tg.UpdateNewMessage) error {
+		m, ok := update.Message.(*tg.Message)
+		if !ok || m.Out {
+			// Outgoing message, not interesting.
+			return nil
+		}
+
+		// Sending reply.
+		_, err := sender.Answer(entities, update) //Reply(entities, update).Text(ctx, m.Message)
+		return err
 	})
 
 	return client.Run(ctx, func(ctx context.Context) error {
@@ -84,3 +91,43 @@ func run(ctx context.Context) error {
 		})
 	})
 }
+
+/*
+func main1() {
+	// Environment variables:
+	//	BOT_TOKEN:     token from BotFather
+	// 	APP_ID:        app_id of Telegram app.
+	// 	APP_HASH:      app_hash of Telegram app.
+	// 	SESSION_FILE:  path to session file
+	// 	SESSION_DIR:   path to session directory, if SESSION_FILE is not set
+	examples.Run(func(ctx context.Context, log *zap.Logger) error {
+		// Dispatcher handles incoming updates.
+		dispatcher := tg.NewUpdateDispatcher()
+		opts := telegram.Options{
+			Logger:        log,
+			UpdateHandler: dispatcher,
+		}
+		return telegram.BotFromEnvironment(ctx, opts, func(ctx context.Context, client *telegram.Client) error {
+			// Raw MTProto API client, allows making raw RPC calls.
+			api := tg.NewClient(client)
+
+			// Helper for sending messages.
+			sender := message.NewSender(api)
+
+			// Setting up handler for incoming message.
+			dispatcher.OnNewMessage(func(ctx context.Context, entities tg.Entities, u *tg.UpdateNewMessage) error {
+				m, ok := u.Message.(*tg.Message)
+				if !ok || m.Out {
+					// Outgoing message, not interesting.
+					return nil
+				}
+
+				// Sending reply.
+				_, err := sender.Reply(entities, u).Text(ctx, m.Message)
+				return err
+			})
+			return nil
+		}, telegram.RunUntilCanceled)
+	})
+}
+*/

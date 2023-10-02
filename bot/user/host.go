@@ -3,6 +3,7 @@ package user
 import (
 	Audio "MusicBot/audio"
 	"MusicBot/log"
+	"MusicBot/passGen"
 	"MusicBot/telegram"
 	"MusicBot/user/playList"
 	"MusicBot/user/utils"
@@ -23,13 +24,13 @@ type hostUser struct {
 func (h *hostUser) init(chatID utils.UserID, audio *Audio.Audio) {
 	h.fatherInit(chatID)
 
-	h.pass = "test pass"
+	h.pass = passGen.GeneratePassword(10, 3, 2, 2)
 	h.connectedUser = make(map[utils.UserID]*sendingUser)
 	h.playList.Init()
 	h.sendText("Вернуться в начало: /start\nУправление ботом: /menu\nКак прислать музыку: /info", false)
 	h.sendText("Ты принимаешь треки👍", false)
 	h.sendText("Отправь секретное сообщение тем кто хочет присоедениться⤵️", false)
-	h.sendText(fmt.Sprintf("<code>secretMessage/@%v/%v</code>", h.id.ChatID.Username, generatePassword()), false)
+	h.sendText(fmt.Sprintf("<code>secretMessage/@%v/%v</code>", h.id.ChatID.Username, h.pass), false)
 	h.audio = audio
 }
 
@@ -76,13 +77,6 @@ func (h *hostUser) sendMenu() {
 		),
 	)
 	h.sendMessage(telegoutil.Message(h.id.ChatID, text).WithReplyMarkup(keyboard), true)
-}
-
-func (h *hostUser) sendInfo() {
-	text := "Ты можешь:\n" +
-		"❕Отправить ссылку на трек из Яндекс Музыки\n" +
-		"❕Прислать аудиофайл со своего устройства"
-	h.sendMessage(telegoutil.Message(h.id.ChatID, text), true)
 }
 
 func (h *hostUser) setAudioToPlaylist(update *telego.Update) {

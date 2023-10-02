@@ -3,3 +3,4 @@ test
 .idea
 config.go
 audio/music/config.go
+audio/tmp

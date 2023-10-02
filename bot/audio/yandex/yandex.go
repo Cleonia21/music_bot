@@ -94,7 +94,7 @@ func (a AudioParams) ThumbnailURL() string {
 //https://music.yandex.ru/album/19435876/track/95386879
 //https://music.yandex.com/album/23345073/track/106849229
 
-func (m *Music) AudioInf(trackURL string) (AudioParams, error) {
+func (m *Music) URLtoAudioParams(trackURL string) (AudioParams, error) {
 	id, _, err := m.parseTrackURL(trackURL)
 	if err != nil {
 		return AudioParams{}, err

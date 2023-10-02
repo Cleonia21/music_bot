@@ -53,3 +53,11 @@ func (u *userFather) sendAudioToUser(audio *telego.SendAudioParams) (sentMsg *te
 func (u *userFather) getID() utils.UserID {
 	return u.id
 }
+
+func (u *userFather) sendInfo() {
+	text := "Ты можешь:\n" +
+		"❕Отправить ссылку на трек из Яндекс Музыки\n" +
+		"❕Прислать аудиофайл со своего устройства\n" +
+		"❕Найти трек в дружественном <a href='https://t.me/YaMuBbot'>боте</a> и переслать мне(потребуется авторизация)"
+	u.sendMessage(telegoutil.Message(u.id.ChatID, text), true)
+}

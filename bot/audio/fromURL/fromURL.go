@@ -1,8 +1,11 @@
 package fromURL
 
 import (
+	"MusicBot/log"
+	"MusicBot/passGen"
 	"MusicBot/telegram"
 	"errors"
+	"fmt"
 	"github.com/bogem/id3v2"
 	"github.com/mymmrac/telego"
 	tu "github.com/mymmrac/telego/telegoutil"
@@ -13,7 +16,7 @@ import (
 	"os"
 )
 
-const pwd = "audio/"
+const pwd = "audio/tmp/"
 
 func downloadFile(URL, fileName string) error {
 	//GetMsg the response bytes from the url
@@ -68,7 +71,7 @@ func resizePicture(fileName string) error {
 
 	imgJpg = resize.Resize(320, 320, imgJpg, resize.Bicubic)
 
-	imgOut, err := os.Create(pwd + "newTestPicture.jpeg")
+	imgOut, err := os.Create(fileName)
 	if err != nil {
 		return err
 	}
@@ -77,32 +80,44 @@ func resizePicture(fileName string) error {
 	return nil
 }
 
-func getAudioFile(URL string) (*os.File, error) {
-	err := downloadFile(URL, pwd+"tmpAudio.mp3")
+func getAudioFile(audioInf AudioInf) (*os.File, error) {
+	fileName := fmt.Sprintf("%v%v;%v;%v.mp3",
+		pwd,
+		audioInf.Title(),
+		audioInf.Performer(),
+		passGen.GeneratePassword(3, 0, 0, 0),
+	)
+	err := downloadFile(audioInf.URL(), fileName)
 	if err != nil {
 		return nil, err
 	}
-	err = deleteFileTags(pwd + "tmpAudio.mp3")
+	err = deleteFileTags(fileName)
 	if err != nil {
 		return nil, err
 	}
-	file, err := os.Open(pwd + "tmpAudio.mp3")
+	file, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
 	}
 	return file, nil
 }
 
-func getPictureFile(URL string) (*os.File, error) {
-	err := downloadFile(URL, pwd+"tmpPicture.jpeg")
+func getPictureFile(audioInf AudioInf) (*os.File, error) {
+	fileName := fmt.Sprintf("%v%v;%v;%v.jpeg",
+		pwd,
+		audioInf.Title(),
+		audioInf.Performer(),
+		passGen.GeneratePassword(3, 0, 0, 0),
+	)
+	err := downloadFile(audioInf.ThumbnailURL(), fileName)
 	if err != nil {
 		return nil, err
 	}
-	err = resizePicture(pwd + "tmpPicture.jpeg")
+	err = resizePicture(fileName)
 	if err != nil {
 		return nil, err
 	}
-	picture, err := os.Open(pwd + "tmpPicture.jpeg")
+	picture, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
 	}
@@ -116,23 +131,34 @@ type AudioInf interface {
 	ThumbnailURL() string
 }
 
+func deleteFile(file *os.File) {
+	err := file.Close()
+	if err != nil {
+		log.Logger.Error(err)
+	}
+	err = os.Remove(file.Name())
+	if err != nil {
+		log.Logger.Error(err)
+	}
+}
+
 func FromURL(audioInf AudioInf) (audio *telego.SendAudioParams, err error) {
 	chatID := tu.ID(-809440484)
 
-	audioFile, err := getAudioFile(audioInf.URL())
+	audioFile, err := getAudioFile(audioInf)
 	if err != nil {
 		return nil, err
 	}
-	defer audioFile.Close()
+	defer deleteFile(audioFile)
 
 	audio = tu.Audio(chatID,
 		tu.File(audioFile)).
 		WithTitle(audioInf.Title()).
 		WithPerformer(audioInf.Performer())
 
-	pictureFile, err := getPictureFile(audioInf.ThumbnailURL())
+	pictureFile, err := getPictureFile(audioInf)
 	if err == nil {
-		defer pictureFile.Close()
+		defer deleteFile(pictureFile)
 		pictureInputFile := tu.File(pictureFile)
 		audio.WithThumbnail(&pictureInputFile)
 	}

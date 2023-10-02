@@ -1,4 +1,4 @@
-package user
+package passGen
 
 import (
 	"math/rand"
@@ -16,11 +16,7 @@ var (
 	allCharSet     = lowerCharSet + upperCharSet + specialCharSet + numberSet
 )
 
-func generatePassword() string {
-	passwordLength := 10
-	minSpecialChar := 3
-	minNum := 0
-	minUpperCase := 3
+func GeneratePassword(passwordLength, minSpecialChar, minNum, minUpperCase int) string {
 	var password strings.Builder
 
 	//Set special character
