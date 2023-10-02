@@ -59,8 +59,8 @@ func run(ctx context.Context) error {
 
 	// Helper for sending messages.
 	sender := message.NewSender(client.API())
-	sender.
-		d.OnNewMessage(func(ctx context.Context, entities tg.Entities, update *tg.UpdateNewMessage) error {
+
+	d.OnNewMessage(func(ctx context.Context, entities tg.Entities, update *tg.UpdateNewMessage) error {
 		m, ok := update.Message.(*tg.Message)
 		if !ok || m.Out {
 			// Outgoing message, not interesting.
@@ -68,7 +68,7 @@ func run(ctx context.Context) error {
 		}
 
 		// Sending reply.
-		_, err := sender.Answer(entities, update) //Reply(entities, update).Text(ctx, m.Message)
+		_, err := sender.Reply(entities, update).Text(ctx, m.Message)
 		return err
 	})
 
@@ -91,43 +91,3 @@ func run(ctx context.Context) error {
 		})
 	})
 }
-
-/*
-func main1() {
-	// Environment variables:
-	//	BOT_TOKEN:     token from BotFather
-	// 	APP_ID:        app_id of Telegram app.
-	// 	APP_HASH:      app_hash of Telegram app.
-	// 	SESSION_FILE:  path to session file
-	// 	SESSION_DIR:   path to session directory, if SESSION_FILE is not set
-	examples.Run(func(ctx context.Context, log *zap.Logger) error {
-		// Dispatcher handles incoming updates.
-		dispatcher := tg.NewUpdateDispatcher()
-		opts := telegram.Options{
-			Logger:        log,
-			UpdateHandler: dispatcher,
-		}
-		return telegram.BotFromEnvironment(ctx, opts, func(ctx context.Context, client *telegram.Client) error {
-			// Raw MTProto API client, allows making raw RPC calls.
-			api := tg.NewClient(client)
-
-			// Helper for sending messages.
-			sender := message.NewSender(api)
-
-			// Setting up handler for incoming message.
-			dispatcher.OnNewMessage(func(ctx context.Context, entities tg.Entities, u *tg.UpdateNewMessage) error {
-				m, ok := u.Message.(*tg.Message)
-				if !ok || m.Out {
-					// Outgoing message, not interesting.
-					return nil
-				}
-
-				// Sending reply.
-				_, err := sender.Reply(entities, u).Text(ctx, m.Message)
-				return err
-			})
-			return nil
-		}, telegram.RunUntilCanceled)
-	})
-}
-*/
