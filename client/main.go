@@ -59,7 +59,7 @@ func run(ctx context.Context) error {
 
 	// Helper for sending messages.
 	sender := message.NewSender(client.API())
-
+	
 	d.OnNewMessage(func(ctx context.Context, entities tg.Entities, update *tg.UpdateNewMessage) error {
 		m, ok := update.Message.(*tg.Message)
 		if !ok || m.Out {
