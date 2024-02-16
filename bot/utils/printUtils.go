@@ -38,6 +38,28 @@ func MsgToStr(msg *telego.Message) string {
 	return "{MSG: nil}"
 }
 
+func MsgParamsToStr(msg *telego.SendMessageParams) string {
+	if msg != nil {
+		return fmt.Sprintf("{MSG: username(%v)text(%v)btns(%v)}",
+			msg.ChatID.Username,
+			textCompression(msg.Text, 20),
+			replyMarkupToStr((msg.ReplyMarkup).(*telego.InlineKeyboardMarkup)),
+		)
+	}
+	return "{MSG: nil}"
+}
+
+func AudioParamsToStr(audio *telego.SendAudioParams) string {
+	if audio != nil {
+		return fmt.Sprintf("{AUDIO_MSG: username(%v)title(%v)perf(%v)}",
+			audio.ChatID.Username,
+			audio.Title,
+			audio.Performer,
+		)
+	}
+	return "{AUDIO_MSG: nil}"
+}
+
 func textCompression(text string, length int) string {
 	if len(text) > length {
 		return text[:length] + "..."

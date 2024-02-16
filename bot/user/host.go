@@ -11,27 +11,62 @@ import (
 	"fmt"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
+	"sync"
 )
+
+type msgBetweenUsers struct {
+	id   string
+	from utils.UserID
+
+	text  string
+	audio telego.Audio
+	url   string
+}
 
 type hostUser struct {
 	userFather
-	pass          string
-	connectedUser map[utils.UserID]*sendingUser
-	playList      playList.PlayList
-	audio         *Audio.Audio
+	pass           string
+	playList       playList.PlayList
+	audio          *Audio.Audio
+	getFromUsersCh chan msgBetweenUsers
+	usersMapMutex  sync.RWMutex
+	sendToUsersChs map[utils.UserID]chan<- msgBetweenUsers
 }
 
-func (h *hostUser) init(chatID utils.UserID, audio *Audio.Audio) {
-	h.fatherInit(chatID)
-
+func (h *hostUser) init(chatID utils.UserID, audio *Audio.Audio, getFromTgCh <-chan telego.Update) {
+	h.id = chatID
 	h.pass = passGen.GeneratePassword(10, 3, 2, 2)
-	h.connectedUser = make(map[utils.UserID]*sendingUser)
 	h.playList.Init()
+	h.audio = audio
+	h.getFromUsersCh = make(chan msgBetweenUsers, 10)
+	h.sendToUsersChs = make(map[utils.UserID]chan<- msgBetweenUsers)
+	h.getFromTgCh = getFromTgCh
+
 	h.sendText("Вернуться в начало: /start\nУправление ботом: /menu\nКак прислать музыку: /info", false)
 	h.sendText("Ты принимаешь треки👍", false)
 	h.sendText("Отправь секретное сообщение тем кто хочет присоедениться⤵️", false)
 	h.sendText(fmt.Sprintf("<code>secretMessage/@%v/%v</code>", h.id.ChatID.Username, h.pass), false)
-	h.audio = audio
+}
+
+func (h *hostUser) join(id utils.UserID, senderInCh chan<- msgBetweenUsers) (hostInCh chan<- msgBetweenUsers) {
+	h.usersMapMutex.Lock()
+	h.sendToUsersChs[id] = senderInCh
+	h.usersMapMutex.Unlock()
+
+	h.sendText(utils.UserNameInserting("Присоединился ", id, ""), false)
+	return h.getFromUsersCh
+}
+
+func (h *hostUser) out() {
+	for _, ch := range h.sendToUsersChs {
+		ch <- msgBetweenUsers{id: "out", from: h.id}
+	}
+	h.sendText("Ты вышел из роли", false)
+}
+
+func (h *hostUser) disconnectUser(id utils.UserID) {
+	delete(h.sendToUsersChs, id)
+	h.sendText(utils.UserNameInserting("Пользователь ", id, " отключился"), false)
 }
 
 func (h *hostUser) handler(update *telego.Update) (user users, needInit bool) {
@@ -145,13 +180,6 @@ func (h *hostUser) sendSummary() (sentMsg *telego.Message) {
 	return h.sendText(text, false)
 }
 
-func (h *hostUser) out() {
-	for _, user := range h.connectedUser {
-		user.hostOut()
-	}
-	h.sendText("Ты вышел из роли", false)
-}
-
 func (h *hostUser) trackNum(who utils.UserID) int {
 	return h.playList.UserTrackNum(who)
 }
@@ -162,16 +190,4 @@ func (h *hostUser) validatePass(pass string) (ok bool) {
 	} else {
 		return false
 	}
-}
-
-func (h *hostUser) join(user *sendingUser) (sentMsg *telego.Message) {
-	h.connectedUser[user.id] = user
-	sentMsg = h.sendText(utils.UserNameInserting("Присоединился ", user.id, ""), false)
-	return
-}
-
-func (h *hostUser) disconnectUser(user *sendingUser) (sentMsg *telego.Message) {
-	delete(h.connectedUser, user.id)
-	sentMsg = h.sendText(utils.UserNameInserting("Пользователь ", user.id, " отключился"), false)
-	return
 }

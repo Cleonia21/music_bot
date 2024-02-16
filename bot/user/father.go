@@ -9,8 +9,11 @@ import (
 	"github.com/mymmrac/telego/telegoutil"
 )
 
+var testFlag = false
+
 type userFather struct {
-	id utils.UserID
+	id          utils.UserID
+	getFromTgCh <-chan telego.Update
 }
 
 func (u *userFather) fatherInit(id utils.UserID) {
@@ -22,10 +25,21 @@ func (u *userFather) sendText(text string, notification bool) (sentMsg *telego.M
 		return
 	}
 	msg := telegoutil.Message(u.id.ChatID, text)
+
+	if testFlag {
+		log.Logger.Debugf(utils2.MsgParamsToStr(msg))
+		return nil
+	}
+
 	return u.sendMessage(msg, notification)
 }
 
 func (u *userFather) sendMessage(msg *telego.SendMessageParams, notification bool) (sentMsg *telego.Message) {
+	if testFlag {
+		log.Logger.Debugf(utils2.MsgParamsToStr(msg))
+		return nil
+	}
+
 	if !notification {
 		msg.WithDisableNotification()
 	}
@@ -40,6 +54,11 @@ func (u *userFather) sendMessage(msg *telego.SendMessageParams, notification boo
 }
 
 func (u *userFather) sendAudioToUser(audio *telego.SendAudioParams) (sentMsg *telego.Message) {
+	if testFlag {
+		log.Logger.Debugf(utils2.AudioParamsToStr(audio))
+		return nil
+	}
+
 	audio.WithDisableNotification()
 	msg, err := telegram.TG.SendAudio(audio)
 	if err != nil {
@@ -59,5 +78,11 @@ func (u *userFather) sendInfo() {
 		"❕Отправить ссылку на трек из Яндекс Музыки\n" +
 		"❕Прислать аудиофайл со своего устройства\n" +
 		"❕Найти трек в дружественном <a href='https://t.me/YaMuBbot'>боте</a> и переслать мне(потребуется авторизация)"
-	u.sendMessage(telegoutil.Message(u.id.ChatID, text), true)
+	msg := telegoutil.Message(u.id.ChatID, text)
+
+	if testFlag {
+		log.Logger.Debugf(utils2.MsgParamsToStr(msg))
+	} else {
+		u.sendMessage(msg, true)
+	}
 }
