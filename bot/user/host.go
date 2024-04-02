@@ -48,6 +48,16 @@ func (h *hostUser) init(chatID utils.UserID, audio *Audio.Audio, getFromTgCh <-c
 	h.sendText(fmt.Sprintf("<code>secretMessage/@%v/%v</code>", h.id.ChatID.Username, h.pass), false)
 }
 
+func (h *hostUser) run(stop chan int) {
+	select {
+	case update := <-h.getFromTgCh:
+
+	case fromUsers := <-h.getFromUsersCh:
+
+	}
+	stop <- 0
+}
+
 func (h *hostUser) join(id utils.UserID, senderInCh chan<- msgBetweenUsers) (hostInCh chan<- msgBetweenUsers) {
 	h.usersMapMutex.Lock()
 	h.sendToUsersChs[id] = senderInCh
@@ -86,9 +96,9 @@ func (h *hostUser) handler(update *telego.Update) (user users, needInit bool) {
 	if update.CallbackQuery != nil {
 		switch update.CallbackQuery.Data {
 		case "getTracks":
-			h.sendAudioPack()
+			h.getAudioPack()
 		case "getSummary":
-			h.sendSummary()
+			h.getSummary()
 		case "sendNotify":
 			h.sendNotify()
 		}
@@ -144,7 +154,7 @@ func (h *hostUser) setAudioToPlaylistFromUser(id utils.UserID, audio *telego.Sen
 	return
 }
 
-func (h *hostUser) sendAudioPack() (sentMsgs []*telego.Message) {
+func (h *hostUser) getAudioPack() (sentMsgs []*telego.Message) {
 	audios, _ := h.playList.GetAudio()
 	for _, audio := range audios {
 		msg := h.sendAudioToUser(audio)
@@ -156,28 +166,34 @@ func (h *hostUser) sendAudioPack() (sentMsgs []*telego.Message) {
 }
 
 func (h *hostUser) sendNotify() (sentMsg *telego.Message) {
-	summary := h.playList.GetSummary()
-	if len(summary) == 0 || (len(summary) == 1 && summary[0].ID == h.id) {
-		return h.sendText("Никто еще не подключился", false)
-	}
-	for _, sum := range summary {
-		if sum.Num < 2 && sum.ID != h.id {
-			h.connectedUser[sum.ID].tracksEndedInQueue()
+	return h.sendText("Функция в разработке", false)
+	/*
+		summary := h.playList.GetSummary()
+		if len(summary) == 0 || (len(summary) == 1 && summary[0].ID == h.id) {
+			return h.sendText("Никто еще не подключился", false)
 		}
-	}
-	return h.sendText("Отправил уведомление тем у кого 1 или 0 треков", false)
+		for _, sum := range summary {
+			if sum.Num < 2 && sum.ID != h.id {
+				h.connectedUser[sum.ID].tracksEndedInQueue()
+			}
+		}
+		return h.sendText("Отправил уведомление тем у кого 1 или 0 треков", false)
+	*/
 }
 
-func (h *hostUser) sendSummary() (sentMsg *telego.Message) {
-	text := "Количество треков у пользователей:\n\n"
-	summary := h.playList.GetSummary()
-	if len(summary) == 0 {
-		return h.sendText("Никто еще ничего не добавил", false)
-	}
-	for _, s := range summary {
-		text += utils.UserNameInserting("", s.ID, fmt.Sprintf("(%v)", s.Num))
-	}
-	return h.sendText(text, false)
+func (h *hostUser) getSummary() (sentMsg *telego.Message) {
+	return h.sendText("Функция в разработке", false)
+	/*
+		text := "Количество треков у пользователей:\n\n"
+		summary := h.playList.GetSummary()
+		if len(summary) == 0 {
+			return h.sendText("Никто еще ничего не добавил", false)
+		}
+		for _, s := range summary {
+			text += utils.UserNameInserting("", s.ID, fmt.Sprintf("(%v)", s.Num))
+		}
+		return h.sendText(text, false)
+	*/
 }
 
 func (h *hostUser) trackNum(who utils.UserID) int {

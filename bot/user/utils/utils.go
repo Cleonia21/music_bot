@@ -12,6 +12,11 @@ type UserID struct {
 	FirstName string
 }
 
+func NewUserID(ID int64, Username string, FirstName string) UserID {
+	id := UserID{ChatID: telego.ChatID{ID, Username}, ID: ID, Username: Username, FirstName: FirstName}
+	return id
+}
+
 func UpdateToID(update *telego.Update) (id UserID) {
 	var user *telego.User
 	if update.Message != nil {

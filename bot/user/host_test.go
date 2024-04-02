@@ -1,76 +1,87 @@
 package user
 
 import (
+	"MusicBot/audio"
 	"MusicBot/user/utils"
+	"github.com/mymmrac/telego"
 	"testing"
 )
 
+func Test_hostUser_init(t *testing.T) {
+	var user hostUser
+
+	chatID := utils.NewUserID(10, "10", "10")
+	a := &audio.Audio{}
+	ch := make(chan telego.Update)
+
+	user.init(chatID, a, ch)
+
+	emptyUserID := utils.UserID{}
+	if user.id == emptyUserID ||
+		user.getFromTgCh == nil ||
+		user.pass == "" ||
+		user.audio == nil ||
+		user.getFromUsersCh == nil ||
+		user.sendToUsersChs == nil {
+		t.Error("the field of structure hostUser has an incorrect value")
+	}
+}
+
 func Test_hostUser_join(t *testing.T) {
-	var host hostUser
+	var HostUser hostUser
 
-	host.init(utils.UserID{Username: "host"}, nil, nil)
+	HostChatID := utils.NewUserID(10, "10", "10")
+	HostAudio := &audio.Audio{}
+	TgCh := make(chan telego.Update)
 
-	type sender struct {
-		id     utils.UserID
-		getCh  chan msgBetweenUsers
-		sendCh chan<- msgBetweenUsers
+	HostUser.init(HostChatID, HostAudio, TgCh)
+
+	JoinChatID := utils.NewUserID(20, "20", "20")
+	JoinCH := make(chan msgBetweenUsers)
+
+	hostInCh := HostUser.join(JoinChatID, JoinCH)
+	if hostInCh != HostUser.getFromUsersCh {
+		t.Errorf("join() = %v, want %v", hostInCh, HostUser.getFromUsersCh)
 	}
-	senders := []sender{
+	if HostUser.sendToUsersChs[JoinChatID] != JoinCH {
+		t.Errorf("join(): the joining user is not recorded correctly")
+	}
+}
+
+func Test_hostUser_out(t *testing.T) {
+	var user hostUser
+	chatID := utils.NewUserID(10, "10", "10")
+	a := &audio.Audio{}
+	ch := make(chan telego.Update)
+	user.init(chatID, a, ch)
+
+	joiningUsersParam := []struct {
+		id         utils.UserID
+		senderInCh chan msgBetweenUsers
+	}{
 		{
-			id:    utils.UserID{Username: "sender1"},
-			getCh: make(chan msgBetweenUsers),
+			utils.NewUserID(1, "1", "1"),
+			make(chan msgBetweenUsers),
 		},
 		{
-			id:    utils.UserID{Username: "sender2"},
-			getCh: make(chan msgBetweenUsers),
+			utils.NewUserID(2, "2", "2"),
+			make(chan msgBetweenUsers),
 		},
 		{
-			id:    utils.UserID{Username: "sender3"},
-			getCh: make(chan msgBetweenUsers),
+			utils.NewUserID(3, "3", "3"),
+			make(chan msgBetweenUsers),
 		},
 	}
-
-	for i := 0; i < len(senders); i++ {
-		senders[i].sendCh = host.join(senders[i].id, senders[i].getCh)
+	for _, param := range joiningUsersParam {
+		user.join(param.id, param.senderInCh)
 	}
 
-	/*
-		type fields struct {
-			userFather     userFather
-			pass           string
-			playList       playList.PlayList
-			audio          *Audio.Audio
-			getFromUsersCh chan msgBetweenUsers
-			usersMapMutex  sync.RWMutex
-			sendToUsersChs map[utils.UserID]chan<- msgBetweenUsers
+	user.out()
+
+	for _, param := range joiningUsersParam {
+		msg := <-param.senderInCh
+		if msg.id != "out" && msg.from != user.id {
+			t.Errorf("out func work incorrect")
 		}
-		type args struct {
-			id         utils.UserID
-			senderInCh chan<- msgBetweenUsers
-		}
-		tests := []struct {
-			name         string
-			fields       fields
-			args         args
-			wantHostInCh chan<- msgBetweenUsers
-		}{
-			// TODO: Add test cases.
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				h := &hostUser{
-					userFather:     tt.fields.userFather,
-					pass:           tt.fields.pass,
-					playList:       tt.fields.playList,
-					audio:          tt.fields.audio,
-					getFromUsersCh: tt.fields.getFromUsersCh,
-					usersMapMutex:  tt.fields.usersMapMutex,
-					sendToUsersChs: tt.fields.sendToUsersChs,
-				}
-				if gotHostInCh := h.join(tt.args.id, tt.args.senderInCh); !reflect.DeepEqual(gotHostInCh, tt.wantHostInCh) {
-					t.Errorf("join() = %v, want %v", gotHostInCh, tt.wantHostInCh)
-				}
-			})
-		}
-	*/
+	}
 }

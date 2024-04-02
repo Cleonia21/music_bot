@@ -104,8 +104,13 @@ func (m *Music) URLtoAudioParams(trackURL string) (AudioParams, error) {
 	if err != nil {
 		return AudioParams{}, err
 	}
+	if trackResp.Error.Message != "" {
+		return AudioParams{}, errors.New(trackResp.Error.Message)
+	}
+	if len(trackResp.Result) == 0 {
+		return AudioParams{}, errors.New("there are no tracks in the response")
+	}
 	track := trackResp.Result[0]
-	//spew.Dump(track)
 
 	params := AudioParams{}
 
@@ -117,9 +122,14 @@ func (m *Music) URLtoAudioParams(trackURL string) (AudioParams, error) {
 	for _, artist := range track.Artists {
 		params.performer += artist.Name + ", "
 	}
-	params.performer = params.performer[:len(params.performer)-2]
+	if len(params.performer) > 2 {
+		params.performer = params.performer[:len(params.performer)-2]
+	}
 
 	params.title = track.Title
-	params.thumbnailURL = "https://" + track.OgImage[:len(track.OgImage)-2] + "400x400"
+
+	if len(track.OgImage) > 2 {
+		params.thumbnailURL = "https://" + track.OgImage[:len(track.OgImage)-2] + "400x400"
+	}
 	return params, nil
 }
