@@ -6,19 +6,27 @@ import (
 
 type HostUser struct {
 	user      *entity.HostUser
-	audioRepo AudioRepo
+	sender 		Sender
 
 	updateCh    <-chan entity.Update
 	msgCh       chan entity.UserMsg
 	childMsgChs map[entity.UserID]chan<- entity.UserMsg
 }
 
-func NewHostUser(id entity.UserID, updateCH <-chan entity.Update, audioRepo AudioRepo) (u *HostUser) {
+func newHostUser(id entity.UserID, updateCH <-chan entity.Update) (u *HostUser) {
 
 	return u
 }
 
-func (u *HostUser) Run(stop chan<- entity.UserID) {
+func (u *HostUser) getMsgCh() chan<- entity.UserMsg {
+	return u.msgCh
+}
+
+func (u *HostUser) getPass() string {
+	return ""
+}
+
+func (u *HostUser) run(stop chan<- entity.UserID) {
 	select {
 	case update := <-u.updateCh:
 		if !u.handleUpdate(update) {
@@ -33,25 +41,64 @@ func (u *HostUser) Run(stop chan<- entity.UserID) {
 	}
 }
 
-func (u *HostUser) handleUpdate(update entity.Update) (stop bool) {
-
-	return false
-}
-
 func (u *HostUser) handleMsg(update entity.UserMsg) (stop bool) {
 
 	return false
 }
 
-func (u *HostUser) getMsgCh() chan<- entity.UserMsg {
-	return u.msgCh
+func (u *HostUser) handleUpdate(update entity.Update) (stop bool) {
+	if update.Command != "" {
+		if u.handleCommand(update.Command) {
+			return true
+		}
+	}
+	return false
 }
 
-func (u *HostUser) join(id entity.UserID, msgCh chan<- entity.UserMsg) {
+func (u *HostUser) handleCommand(comnd string) (stop bool) {
+	switch comnd {
+		case "/menu":
+			u.sendMenu()
+		case "/start":
+			u.out()
+			return true
+		case "/info":
+			u.sendInfo()
+		case "/get_tracks":
+			u.getTracks()
+		case "/get_summary":
+			u.getSummary()
+		case "/send_notify":
+			u.sendNotify()
+	}
+	return false
+}
 
+func (u *HostUser) sendMenu() {
+	u.sender.SendMenu(u.user.ID)
 }
 
 func (u *HostUser) out() {
+	for _, ch := range u.childMsgChs {
+		ch <- entity.UserMsg{
+			MsgId: entity.UserMsgExit,
+			From:  u.user.ID,
+		}
+	}
+	u.sender.Out(u.user.ID)
+}
+
+func (u *HostUser) sendInfo() {
+		u.sender.SendInfo(u.user.ID)
+}
+
+func (u *HostUser) getTracks() {}
+
+func (u *HostUser) getSummary() {}
+
+func (u *HostUser) sendNotify() {}
+
+func (u *HostUser) join(id entity.UserID, msgCh chan<- entity.UserMsg) {
 
 }
 

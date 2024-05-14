@@ -1,5 +1,9 @@
 package entity
 
 type Update struct {
-	ID UserID
+	UserID UserID
+	Text string
+	Data string
+	Audio Audio
+	Command string
 }

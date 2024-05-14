@@ -1,7 +1,11 @@
 package entity
 
+const (
+	UserMsgExit = 1
+)
+
 type UserMsg struct {
-	MsgId string
+	MsgId int
 	From  UserID
 	Text  string
 	Audio Audio

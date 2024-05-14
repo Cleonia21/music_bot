@@ -6,11 +6,16 @@ type UnregUser struct {
 	updateCh chan entity.Update
 }
 
-func NewUnregUser(id entity.UserID) (u *UnregUser) {
+func newUnregUser(id entity.UserID) (u *UnregUser) {
 
 	return u
 }
 
-func (u *UnregUser) Run(stop chan<- entity.UserID) {
+func (u *UnregUser) setUpdate(update entity.Update) (action, data string) {
+
+	return "", ""
+}
+
+func invalidPass() {
 
 }
