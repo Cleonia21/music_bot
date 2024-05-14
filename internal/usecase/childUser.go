@@ -3,16 +3,13 @@ package usecase
 import "music_bot/internal/entity"
 
 type ChildUser struct {
-	user      *entity.HostUser
+	user      *entity.ChildUser
+	sender    Sender
 	audioRepo AudioRepo
 
 	updateCh   <-chan entity.Update
-	msgCh      chan entity.UserMsg
+	msgCh      <-chan entity.UserMsg
 	hostMsgChs chan<- entity.UserMsg
-}
-
-func newChildUser(id entity.UserID, updateCH <-chan entity.Update, hostMsgChs chan<- entity.UserMsg) (u *ChildUser) {
-	return nil
 }
 
 func (u *ChildUser) run(stop chan<- entity.UserID) {

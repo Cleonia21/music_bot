@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"music_bot/internal/entity"
 	"sync"
 )
@@ -12,6 +13,8 @@ type UserData struct {
 }
 
 type Admin struct {
+	audioRepo     AudioRepo
+	sender        Sender
 	users         map[entity.UserID]UserData
 	unregUsers    map[entity.UserID]*UnregUser
 	usersMapMutex sync.RWMutex
@@ -49,34 +52,81 @@ func (a *Admin) Handler(update entity.Update) {
 func (a *Admin) unreg(update entity.Update) {
 	unregUser, ok := a.unregUsers[update.UserID]
 	if !ok {
-		unregUser = newUnregUser(update.UserID)
-		a.unregUsers[update.UserID] = unregUser
+		a.newUnregUser(update.UserID)
 	} else {
-		action, data := unregUser.setUpdate(update)
+		action := unregUser.setUpdate(update)
 		switch action {
-		case "connect":
-			// поменять ключ
-			hostUserData := a.users[update.UserID]
-			if hostUserData.pass == data {
-				newChildUpdateCh := new(chan entity.Update)
-				newChildUser := newChildUser(update.UserID, *newChildUpdateCh, hostUserData.msgCh)
-				a.users[update.UserID] = UserData{
-					updateCh: *newChildUpdateCh,
-					msgCh:    newChildUser.msgCh,
-				}
-				go newChildUser.run(a.stop)
+		case "child":
+			hostUserData, ok := a.users[unregUser.hostId]
+			if !ok {
+				unregUser.setAction("host not found")
 			}
-		case "role":
-			if data == "host" {
-				newHostUpdateCh := new(chan entity.Update)
-				newHostUser := newHostUser(update.UserID, *newHostUpdateCh)
-				a.users[update.UserID] = UserData{
-					updateCh: *newHostUpdateCh,
-					msgCh:    newHostUser.msgCh,
-					pass:			newHostUser.getPass(),
+			if hostUserData.pass == unregUser.pass {
+				if err := a.newChildUser(unregUser.user.ID, unregUser.hostId); err != nil {
+					unregUser.setAction(err.Error())
+				} else {
+					delete(a.unregUsers, unregUser.user.ID)
 				}
-				go newHostUser.run(a.stop)
+			} else {
+				unregUser.setAction("pass incorrect")
 			}
+		case "host":
+			a.newHostUser(unregUser.user.ID)
+			delete(a.unregUsers, unregUser.user.ID)
 		}
 	}
+}
+
+func (a *Admin) newUnregUser(userID entity.UserID) {
+	user := UnregUser{
+		user:   entity.NewUnregUser(userID),
+		sender: a.sender,
+	}
+	a.unregUsers[userID] = &user
+}
+
+func (a *Admin) newChildUser(userID, hostID entity.UserID) error {
+	updateCh := new(chan entity.Update)
+	msgCh := new(chan entity.UserMsg)
+
+	a.usersMapMutex.Lock()
+	defer a.usersMapMutex.Unlock()
+	host, ok := a.users[hostID]
+	if !ok {
+		return errors.New("host not found")
+	}
+
+	user := ChildUser{
+		user:       entity.NewChildUser(userID),
+		sender:     a.sender,
+		audioRepo:  a.audioRepo,
+		updateCh:   *updateCh,
+		msgCh:      *msgCh,
+		hostMsgChs: host.msgCh,
+	}
+
+	a.users[userID] = UserData{
+		updateCh: *updateCh,
+		msgCh:    *msgCh,
+	}
+	go user.run(a.stop)
+	return nil
+}
+
+func (a *Admin) newHostUser(userID entity.UserID) {
+	updateCh := new(chan entity.Update)
+	msgCh := new(chan entity.UserMsg)
+
+	a.usersMapMutex.Lock()
+	defer a.usersMapMutex.Unlock()
+
+	user := HostUser{
+		user:        entity.NewHostUser(userID),
+		sender:      a.sender,
+		audioRepo:   a.audioRepo,
+		updateCh:    *updateCh,
+		msgCh:       *msgCh,
+		childMsgChs: make(map[entity.UserID]chan<- entity.UserMsg),
+	}
+	go user.run(a.stop)
 }

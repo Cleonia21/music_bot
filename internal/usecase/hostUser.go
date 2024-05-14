@@ -6,24 +6,12 @@ import (
 
 type HostUser struct {
 	user      *entity.HostUser
-	sender 		Sender
+	sender    Sender
+	audioRepo AudioRepo
 
 	updateCh    <-chan entity.Update
-	msgCh       chan entity.UserMsg
+	msgCh       <-chan entity.UserMsg
 	childMsgChs map[entity.UserID]chan<- entity.UserMsg
-}
-
-func newHostUser(id entity.UserID, updateCH <-chan entity.Update) (u *HostUser) {
-
-	return u
-}
-
-func (u *HostUser) getMsgCh() chan<- entity.UserMsg {
-	return u.msgCh
-}
-
-func (u *HostUser) getPass() string {
-	return ""
 }
 
 func (u *HostUser) run(stop chan<- entity.UserID) {
@@ -55,21 +43,21 @@ func (u *HostUser) handleUpdate(update entity.Update) (stop bool) {
 	return false
 }
 
-func (u *HostUser) handleCommand(comnd string) (stop bool) {
-	switch comnd {
-		case "/menu":
-			u.sendMenu()
-		case "/start":
-			u.out()
-			return true
-		case "/info":
-			u.sendInfo()
-		case "/get_tracks":
-			u.getTracks()
-		case "/get_summary":
-			u.getSummary()
-		case "/send_notify":
-			u.sendNotify()
+func (u *HostUser) handleCommand(command string) (stop bool) {
+	switch command {
+	case "/menu":
+		u.sendMenu()
+	case "/start":
+		u.out()
+		return true
+	case "/info":
+		u.sendInfo()
+	case "/get_tracks":
+		u.getTracks()
+	case "/get_summary":
+		u.getSummary()
+	case "/send_notify":
+		u.sendNotify()
 	}
 	return false
 }
@@ -89,7 +77,7 @@ func (u *HostUser) out() {
 }
 
 func (u *HostUser) sendInfo() {
-		u.sender.SendInfo(u.user.ID)
+	u.sender.SendInfo(u.user.ID)
 }
 
 func (u *HostUser) getTracks() {}
